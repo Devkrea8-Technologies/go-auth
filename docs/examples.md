@@ -1,0 +1,329 @@
+# Examples
+
+This document provides examples of how to use the Go Auth library in different scenarios.
+
+## Basic Usage
+
+### Simple Registration and Login
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "time"
+    
+    "github.com/go-auth"
+    "github.com/go-auth/config"
+    "github.com/go-auth/types"
+)
+
+func main() {
+    // Create configuration
+    cfg := &config.Config{
+        Database: config.DatabaseConfig{
+            URI:        "mongodb://localhost:27017",
+            Database:   "myapp",
+            Collection: "users",
+        },
+        JWT: config.JWTConfig{
+            SecretKey:       "your-secret-key-here",
+            AccessTokenTTL:  15 * time.Minute,
+            RefreshTokenTTL: 7 * 24 * time.Hour,
+        },
+    }
+
+    // Initialize auth service
+    auth, err := goauth.New(cfg)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer auth.Close(context.Background())
+
+    // Register a new user
+    user := &types.UserRegistration{
+        Email:     "user@example.com",
+        Password:  "password123",
+        FirstName: "John",
+        LastName:  "Doe",
+    }
+
+    response, err := auth.Register(context.Background(), user, "https://myapp.com")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("User registered: %s\n", response.User.Email)
+
+    // Login the user
+    login := &types.UserLogin{
+        Email:    "user@example.com",
+        Password: "password123",
+    }
+
+    loginResponse, err := auth.Login(context.Background(), login)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("User logged in: %s\n", loginResponse.User.Email)
+    fmt.Printf("Access token: %s\n", loginResponse.AccessToken)
+}
+```
+
+## Web Framework Integration
+
+### Gin Framework
+
+```go
+package main
+
+import (
+    "context"
+    "net/http"
+    "time"
+    
+    "github.com/gin-gonic/gin"
+    "github.com/go-auth"
+    "github.com/go-auth/config"
+    "github.com/go-auth/types"
+)
+
+type AuthHandler struct {
+    auth *goauth.Auth
+}
+
+func NewAuthHandler(auth *goauth.Auth) *AuthHandler {
+    return &AuthHandler{auth: auth}
+}
+
+func (h *AuthHandler) Register(c *gin.Context) {
+    var req types.UserRegistration
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+        return
+    }
+
+    response, err := h.auth.Register(c.Request.Context(), &req, "https://myapp.com")
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusCreated, response)
+}
+
+func (h *AuthHandler) Login(c *gin.Context) {
+    var req types.UserLogin
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+        return
+    }
+
+    response, err := h.auth.Login(c.Request.Context(), &req)
+    if err != nil {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, response)
+}
+
+// JWT middleware
+func (h *AuthHandler) AuthMiddleware() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        token := c.GetHeader("Authorization")
+        if token == "" {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
+            c.Abort()
+            return
+        }
+
+        if len(token) > 7 && token[:7] == "Bearer " {
+            token = token[7:]
+        }
+
+        user, err := h.auth.ValidateToken(c.Request.Context(), token)
+        if err != nil {
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+            c.Abort()
+            return
+        }
+
+        c.Set("user", user)
+        c.Next()
+    }
+}
+
+func main() {
+    cfg := &config.Config{
+        Database: config.DatabaseConfig{
+            URI:        "mongodb://localhost:27017",
+            Database:   "myapp",
+            Collection: "users",
+        },
+        JWT: config.JWTConfig{
+            SecretKey:       "your-secret-key-here",
+            AccessTokenTTL:  15 * time.Minute,
+            RefreshTokenTTL: 7 * 24 * time.Hour,
+        },
+    }
+
+    auth, err := goauth.New(cfg)
+    if err != nil {
+        panic(err)
+    }
+    defer auth.Close(context.Background())
+
+    authHandler := NewAuthHandler(auth)
+
+    r := gin.Default()
+
+    // Public routes
+    r.POST("/auth/register", authHandler.Register)
+    r.POST("/auth/login", authHandler.Login)
+
+    // Protected routes
+    protected := r.Group("/api")
+    protected.Use(authHandler.AuthMiddleware())
+    {
+        protected.GET("/profile", func(c *gin.Context) {
+            user := c.MustGet("user").(*types.User)
+            c.JSON(http.StatusOK, gin.H{
+                "id":    user.ID,
+                "email": user.Email,
+                "name":  user.FirstName + " " + user.LastName,
+            })
+        })
+    }
+
+    r.Run(":8080")
+}
+```
+
+## Error Handling
+
+```go
+func handleAuthError(err error) string {
+    if err == nil {
+        return ""
+    }
+
+    errMsg := err.Error()
+    
+    switch {
+    case strings.Contains(errMsg, "already exists"):
+        return "A user with this email already exists"
+    case strings.Contains(errMsg, "invalid email or password"):
+        return "Invalid email or password"
+    case strings.Contains(errMsg, "email verification required"):
+        return "Please verify your email address before logging in"
+    case strings.Contains(errMsg, "invalid verification token"):
+        return "Invalid or expired verification token"
+    case strings.Contains(errMsg, "account is deactivated"):
+        return "Your account has been deactivated"
+    default:
+        return "An error occurred. Please try again"
+    }
+}
+```
+
+## Testing
+
+```go
+func TestUserRegistration(t *testing.T) {
+    cfg := &config.Config{
+        Database: config.DatabaseConfig{
+            URI:        "mongodb://localhost:27017",
+            Database:   "test_db",
+            Collection: "users",
+        },
+        JWT: config.JWTConfig{
+            SecretKey:       "test-secret-key",
+            AccessTokenTTL:  15 * time.Minute,
+            RefreshTokenTTL: 7 * 24 * time.Hour,
+        },
+    }
+
+    auth, err := goauth.New(cfg)
+    require.NoError(t, err)
+    defer auth.Close(context.Background())
+
+    user := &types.UserRegistration{
+        Email:     "test@example.com",
+        Password:  "password123",
+        FirstName: "Test",
+        LastName:  "User",
+    }
+
+    response, err := auth.Register(context.Background(), user, "https://test.com")
+    require.NoError(t, err)
+    assert.NotNil(t, response)
+    assert.Equal(t, user.Email, response.User.Email)
+    assert.NotEmpty(t, response.AccessToken)
+}
+```
+
+## Complete Example with Email
+
+```go
+func main() {
+    cfg := &config.Config{
+        Database: config.DatabaseConfig{
+            URI:        "mongodb://localhost:27017",
+            Database:   "myapp",
+            Collection: "users",
+        },
+        JWT: config.JWTConfig{
+            SecretKey:       "your-secret-key-here",
+            AccessTokenTTL:  15 * time.Minute,
+            RefreshTokenTTL: 7 * 24 * time.Hour,
+        },
+        Email: config.EmailConfig{
+            SMTPHost:     "smtp.gmail.com",
+            SMTPPort:     587,
+            SMTPUsername: "your-email@gmail.com",
+            SMTPPassword: "your-app-password",
+            FromEmail:    "noreply@myapp.com",
+            FromName:     "My App",
+            EmailVerificationTemplate: config.EmailTemplate{
+                Subject: "Verify your email address",
+                Body:    "Click here to verify: {{.BaseURL}}/verify?token={{.Token}}",
+            },
+            PasswordResetTemplate: config.EmailTemplate{
+                Subject: "Reset your password",
+                Body:    "Click here to reset: {{.BaseURL}}/reset?token={{.Token}}",
+            },
+        },
+        Security: config.SecurityConfig{
+            RequireEmailVerification: true,
+        },
+    }
+
+    auth, err := goauth.New(cfg)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer auth.Close(context.Background())
+
+    // Register user (will send verification email)
+    user := &types.UserRegistration{
+        Email:     "user@example.com",
+        Password:  "password123",
+        FirstName: "John",
+        LastName:  "Doe",
+    }
+
+    response, err := auth.Register(context.Background(), user, "https://myapp.com")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    log.Printf("User registered: %s", response.User.Email)
+    log.Printf("Email verification required: %t", !response.User.IsEmailVerified)
+}
+```
+
+These examples show the most common usage patterns. For more advanced scenarios, refer to the API documentation.

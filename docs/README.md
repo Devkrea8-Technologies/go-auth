@@ -28,7 +28,6 @@ package main
 import (
     "context"
     "log"
-    "time"
     
     "github.com/go-auth"
     "github.com/go-auth/config"
@@ -92,12 +91,12 @@ func main() {
 
 ## Documentation
 
-- [Configuration](docs/configuration.md) - Detailed configuration options
-- [Database Setup](docs/database.md) - MongoDB setup and configuration
-- [Email Templates](docs/email-templates.md) - Email template configuration
-- [API Reference](docs/api-reference.md) - Complete API documentation
-- [Security](docs/security.md) - Security considerations and best practices
-- [Examples](docs/examples.md) - Usage examples and patterns
+- [Configuration](configuration.md) - Detailed configuration options
+- [Database Setup](database.md) - MongoDB setup and configuration
+- [Email Templates](email-templates.md) - Email template configuration
+- [API Reference](api-reference.md) - Complete API documentation
+- [Security](security.md) - Security considerations and best practices
+- [Examples](examples.md) - Usage examples and patterns
 
 ## Architecture
 
@@ -109,12 +108,6 @@ The library is organized into several packages:
 - `auth/` - Core authentication logic and JWT management
 - `email/` - Email service for verification and password reset
 - `utils/` - Utility functions for password hashing and token generation
-
-## Requirements
-
-- Go 1.21 or higher
-- MongoDB 4.0 or higher
-- SMTP server for email functionality
 
 ## Contributing
 
@@ -128,4 +121,4 @@ This library is designed to be easily extensible. To add new features:
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](../LICENSE) file for details.
