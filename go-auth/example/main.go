@@ -89,7 +89,8 @@ func main() {
 		log.Printf("Registration failed: %v", err)
 	} else {
 		fmt.Printf("✓ User registered successfully: %s\n", response.User.Email)
-		fmt.Printf("  User ID: %s\n", response.User.ID.Hex())
+		// Print the user ID as a string, since .Hex() may not be available
+		fmt.Printf("  User ID: %v\n", response.User.ID)
 		fmt.Printf("  Email verified: %t\n", response.User.IsEmailVerified)
 		fmt.Printf("  Access token: %s...\n", response.AccessToken[:20])
 	}

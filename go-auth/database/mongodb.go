@@ -117,7 +117,21 @@ func (m *MongoDB) GetUserByEmail(ctx context.Context, email string) (*types.User
 }
 
 // GetUserByID retrieves a user by ID
-func (m *MongoDB) GetUserByID(ctx context.Context, id primitive.ObjectID) (*types.User, error) {
+func (m *MongoDB) GetUserByID(ctx context.Context, userID interface{}) (*types.User, error) {
+	var id primitive.ObjectID
+	switch v := userID.(type) {
+	case primitive.ObjectID:
+		id = v
+	case string:
+		var err error
+		id, err = primitive.ObjectIDFromHex(v)
+		if err != nil {
+			return nil, fmt.Errorf("invalid ObjectID format: %w", err)
+		}
+	default:
+		return nil, fmt.Errorf("unsupported ID type: %T", userID)
+	}
+
 	var user types.User
 	err := m.collection.FindOne(ctx, bson.M{"_id": id}).Decode(&user)
 	if err != nil {
@@ -171,10 +185,24 @@ func (m *MongoDB) UpdateUser(ctx context.Context, user *types.User) error {
 }
 
 // UpdateUserPassword updates user password
-func (m *MongoDB) UpdateUserPassword(ctx context.Context, userID primitive.ObjectID, password string) error {
+func (m *MongoDB) UpdateUserPassword(ctx context.Context, userID interface{}, password string) error {
+	var id primitive.ObjectID
+	switch v := userID.(type) {
+	case primitive.ObjectID:
+		id = v
+	case string:
+		var err error
+		id, err = primitive.ObjectIDFromHex(v)
+		if err != nil {
+			return fmt.Errorf("invalid ObjectID format: %w", err)
+		}
+	default:
+		return fmt.Errorf("unsupported ID type: %T", userID)
+	}
+
 	_, err := m.collection.UpdateOne(
 		ctx,
-		bson.M{"_id": userID},
+		bson.M{"_id": id},
 		bson.M{
 			"$set": bson.M{
 				"password":   password,
@@ -190,7 +218,21 @@ func (m *MongoDB) UpdateUserPassword(ctx context.Context, userID primitive.Objec
 }
 
 // UpdateEmailVerification updates email verification status
-func (m *MongoDB) UpdateEmailVerification(ctx context.Context, userID primitive.ObjectID, verified bool) error {
+func (m *MongoDB) UpdateEmailVerification(ctx context.Context, userID interface{}, verified bool) error {
+	var id primitive.ObjectID
+	switch v := userID.(type) {
+	case primitive.ObjectID:
+		id = v
+	case string:
+		var err error
+		id, err = primitive.ObjectIDFromHex(v)
+		if err != nil {
+			return fmt.Errorf("invalid ObjectID format: %w", err)
+		}
+	default:
+		return fmt.Errorf("unsupported ID type: %T", userID)
+	}
+
 	update := bson.M{
 		"is_email_verified": verified,
 		"updated_at":        time.Now(),
@@ -203,7 +245,7 @@ func (m *MongoDB) UpdateEmailVerification(ctx context.Context, userID primitive.
 
 	_, err := m.collection.UpdateOne(
 		ctx,
-		bson.M{"_id": userID},
+		bson.M{"_id": id},
 		bson.M{"$set": update},
 	)
 	if err != nil {
@@ -213,11 +255,25 @@ func (m *MongoDB) UpdateEmailVerification(ctx context.Context, userID primitive.
 }
 
 // UpdateLastLogin updates user's last login time
-func (m *MongoDB) UpdateLastLogin(ctx context.Context, userID primitive.ObjectID) error {
+func (m *MongoDB) UpdateLastLogin(ctx context.Context, userID interface{}) error {
+	var id primitive.ObjectID
+	switch v := userID.(type) {
+	case primitive.ObjectID:
+		id = v
+	case string:
+		var err error
+		id, err = primitive.ObjectIDFromHex(v)
+		if err != nil {
+			return fmt.Errorf("invalid ObjectID format: %w", err)
+		}
+	default:
+		return fmt.Errorf("unsupported ID type: %T", userID)
+	}
+
 	now := time.Now()
 	_, err := m.collection.UpdateOne(
 		ctx,
-		bson.M{"_id": userID},
+		bson.M{"_id": id},
 		bson.M{
 			"$set": bson.M{
 				"last_login_at": &now,
@@ -232,8 +288,22 @@ func (m *MongoDB) UpdateLastLogin(ctx context.Context, userID primitive.ObjectID
 }
 
 // DeleteUser deletes a user from the database
-func (m *MongoDB) DeleteUser(ctx context.Context, userID primitive.ObjectID) error {
-	_, err := m.collection.DeleteOne(ctx, bson.M{"_id": userID})
+func (m *MongoDB) DeleteUser(ctx context.Context, userID interface{}) error {
+	var id primitive.ObjectID
+	switch v := userID.(type) {
+	case primitive.ObjectID:
+		id = v
+	case string:
+		var err error
+		id, err = primitive.ObjectIDFromHex(v)
+		if err != nil {
+			return fmt.Errorf("invalid ObjectID format: %w", err)
+		}
+	default:
+		return fmt.Errorf("unsupported ID type: %T", userID)
+	}
+
+	_, err := m.collection.DeleteOne(ctx, bson.M{"_id": id})
 	if err != nil {
 		return fmt.Errorf("failed to delete user: %w", err)
 	}

@@ -2,8 +2,6 @@ package types
 
 import (
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // CustomFields interface allows users to define custom fields
@@ -16,7 +14,7 @@ type CustomFields interface {
 
 // User represents a user in the authentication system
 type User struct {
-	ID                primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+	ID                interface{}        `bson:"_id,omitempty" json:"id,omitempty"`
 	Email             string             `bson:"email" json:"email"`
 	Password          string             `bson:"password" json:"-"`
 	FirstName         string             `bson:"first_name" json:"first_name"`
@@ -148,15 +146,15 @@ type AuthResponse struct {
 
 // UserResponse represents user response (without sensitive data)
 type UserResponse struct {
-	ID              primitive.ObjectID `json:"id"`
-	Email           string             `json:"email"`
-	FirstName       string             `json:"first_name"`
-	LastName        string             `json:"last_name"`
-	IsEmailVerified bool               `json:"is_email_verified"`
-	CreatedAt       time.Time          `json:"created_at"`
-	UpdatedAt       time.Time          `json:"updated_at"`
-	LastLoginAt     *time.Time         `json:"last_login_at,omitempty"`
-	IsActive        bool               `json:"is_active"`
+	ID              interface{} `json:"id"`
+	Email           string      `json:"email"`
+	FirstName       string      `json:"first_name"`
+	LastName        string      `json:"last_name"`
+	IsEmailVerified bool        `json:"is_email_verified"`
+	CreatedAt       time.Time   `json:"created_at"`
+	UpdatedAt       time.Time   `json:"updated_at"`
+	LastLoginAt     *time.Time  `json:"last_login_at,omitempty"`
+	IsActive        bool        `json:"is_active"`
 
 	// Custom fields support
 	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`

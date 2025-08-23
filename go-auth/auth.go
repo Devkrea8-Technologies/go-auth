@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
-
 	"github.com/go-auth/auth"
 	"github.com/go-auth/config"
 	"github.com/go-auth/types"
@@ -65,7 +63,7 @@ func (a *Auth) RefreshToken(ctx context.Context, refreshToken string) (*types.Au
 }
 
 // GetUserByID gets a user by ID
-func (a *Auth) GetUserByID(ctx context.Context, userID primitive.ObjectID) (*types.User, error) {
+func (a *Auth) GetUserByID(ctx context.Context, userID interface{}) (*types.User, error) {
 	return a.service.GetUserByID(ctx, userID)
 }
 
@@ -90,7 +88,7 @@ func (a *Auth) GetConfig() *config.Config {
 }
 
 // UpdateUserCustomFields updates custom fields for a user
-func (a *Auth) UpdateUserCustomFields(ctx context.Context, userID primitive.ObjectID, customFields map[string]interface{}) error {
+func (a *Auth) UpdateUserCustomFields(ctx context.Context, userID interface{}, customFields map[string]interface{}) error {
 	user, err := a.service.GetUserByID(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("failed to get user: %w", err)
@@ -104,7 +102,7 @@ func (a *Auth) UpdateUserCustomFields(ctx context.Context, userID primitive.Obje
 }
 
 // SetUserCustomField sets a single custom field for a user
-func (a *Auth) SetUserCustomField(ctx context.Context, userID primitive.ObjectID, key string, value interface{}) error {
+func (a *Auth) SetUserCustomField(ctx context.Context, userID interface{}, key string, value interface{}) error {
 	user, err := a.service.GetUserByID(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("failed to get user: %w", err)
@@ -118,7 +116,7 @@ func (a *Auth) SetUserCustomField(ctx context.Context, userID primitive.ObjectID
 }
 
 // GetUserCustomField gets a single custom field for a user
-func (a *Auth) GetUserCustomField(ctx context.Context, userID primitive.ObjectID, key string) (interface{}, bool, error) {
+func (a *Auth) GetUserCustomField(ctx context.Context, userID interface{}, key string) (interface{}, bool, error) {
 	user, err := a.service.GetUserByID(ctx, userID)
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to get user: %w", err)
@@ -132,7 +130,7 @@ func (a *Auth) GetUserCustomField(ctx context.Context, userID primitive.ObjectID
 }
 
 // RemoveUserCustomField removes a custom field for a user
-func (a *Auth) RemoveUserCustomField(ctx context.Context, userID primitive.ObjectID, key string) error {
+func (a *Auth) RemoveUserCustomField(ctx context.Context, userID interface{}, key string) error {
 	user, err := a.service.GetUserByID(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("failed to get user: %w", err)

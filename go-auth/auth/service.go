@@ -16,15 +16,26 @@ import (
 // Service represents the main authentication service
 type Service struct {
 	config       *config.Config
-	db           *database.MongoDB
+	db           database.Database
 	jwtManager   *JWTManager
 	emailService *email.EmailService
 }
 
 // NewService creates a new authentication service
 func NewService(cfg *config.Config) (*Service, error) {
-	// Initialize database
-	db, err := database.NewMongoDB(cfg)
+	// Initialize database based on configuration
+	var db database.Database
+	var err error
+
+	switch cfg.Database.Type {
+	case config.DatabaseTypeMongoDB:
+		db, err = database.NewMongoDB(cfg)
+	case config.DatabaseTypePostgreSQL:
+		db, err = database.NewPostgreSQL(cfg)
+	default:
+		return nil, fmt.Errorf("unsupported database type: %s", cfg.Database.Type)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize database: %w", err)
 	}
@@ -281,12 +292,7 @@ func (s *Service) RefreshToken(ctx context.Context, refreshToken string) (*types
 	}
 
 	// Get user by ID
-	userID, err := primitive.ObjectIDFromHex(claims.UserID)
-	if err != nil {
-		return nil, fmt.Errorf("invalid user ID in token: %w", err)
-	}
-
-	user, err := s.db.GetUserByID(ctx, userID)
+	user, err := s.db.GetUserByID(ctx, claims.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
@@ -313,7 +319,7 @@ func (s *Service) RefreshToken(ctx context.Context, refreshToken string) (*types
 }
 
 // GetUserByID gets a user by ID
-func (s *Service) GetUserByID(ctx context.Context, userID primitive.ObjectID) (*types.User, error) {
+func (s *Service) GetUserByID(ctx context.Context, userID interface{}) (*types.User, error) {
 	return s.db.GetUserByID(ctx, userID)
 }
 

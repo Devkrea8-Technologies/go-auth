@@ -2,9 +2,11 @@ package auth
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/go-auth/config"
 	"github.com/go-auth/types"
@@ -29,10 +31,27 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+// userIDToString converts user ID to string
+func userIDToString(userID interface{}) string {
+	switch v := userID.(type) {
+	case primitive.ObjectID:
+		return v.Hex()
+	case int64:
+		return strconv.FormatInt(v, 10)
+	case int:
+		return strconv.Itoa(v)
+	case string:
+		return v
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+}
+
 // GenerateAccessToken generates an access token for a user
 func (j *JWTManager) GenerateAccessToken(user *types.User) (string, error) {
+	userIDStr := userIDToString(user.ID)
 	claims := &Claims{
-		UserID: user.ID.Hex(),
+		UserID: userIDStr,
 		Email:  user.Email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(j.config.JWT.AccessTokenTTL)),
@@ -40,7 +59,7 @@ func (j *JWTManager) GenerateAccessToken(user *types.User) (string, error) {
 			NotBefore: jwt.NewNumericDate(time.Now()),
 			Issuer:    j.config.JWT.Issuer,
 			Audience:  []string{j.config.JWT.Audience},
-			Subject:   user.ID.Hex(),
+			Subject:   userIDStr,
 		},
 	}
 
@@ -50,8 +69,9 @@ func (j *JWTManager) GenerateAccessToken(user *types.User) (string, error) {
 
 // GenerateRefreshToken generates a refresh token for a user
 func (j *JWTManager) GenerateRefreshToken(user *types.User) (string, error) {
+	userIDStr := userIDToString(user.ID)
 	claims := &Claims{
-		UserID: user.ID.Hex(),
+		UserID: userIDStr,
 		Email:  user.Email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(j.config.JWT.RefreshTokenTTL)),
@@ -59,7 +79,7 @@ func (j *JWTManager) GenerateRefreshToken(user *types.User) (string, error) {
 			NotBefore: jwt.NewNumericDate(time.Now()),
 			Issuer:    j.config.JWT.Issuer,
 			Audience:  []string{j.config.JWT.Audience},
-			Subject:   user.ID.Hex(),
+			Subject:   userIDStr,
 		},
 	}
 

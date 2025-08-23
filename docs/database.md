@@ -1,12 +1,19 @@
 # Database Setup
 
-The Go Auth library uses MongoDB as its primary database. This document covers database setup, configuration, and best practices.
+The Go Auth library supports both MongoDB and PostgreSQL databases. This document covers database setup, configuration, and best practices for both databases.
 
-## MongoDB Requirements
+## Database Requirements
 
+### MongoDB
 - MongoDB 4.0 or higher
 - Network access to MongoDB instance
 - Proper authentication and authorization configured
+
+### PostgreSQL
+- PostgreSQL 12.0 or higher
+- Network access to PostgreSQL instance
+- Proper authentication and authorization configured
+- `lib/pq` driver (automatically included)
 
 ## Connection Setup
 
@@ -50,14 +57,35 @@ The library supports various MongoDB connection string formats:
 "mongodb+srv://username:password@cluster.mongodb.net/?retryWrites=true&w=majority"
 ```
 
-### Configuration Example
+### MongoDB Configuration Example
 
 ```go
 cfg := &config.Config{
     Database: config.DatabaseConfig{
-        URI:        "mongodb://localhost:27017",
-        Database:   "myapp",
-        Collection: "users",
+        Type:        config.DatabaseTypeMongoDB,
+        URI:         "mongodb://localhost:27017",
+        Database:    "myapp",
+        Collection:  "users",
+    },
+    // ... other config
+}
+```
+
+### PostgreSQL Configuration Example
+
+```go
+cfg := &config.Config{
+    Database: config.DatabaseConfig{
+        Type:         config.DatabaseTypePostgreSQL,
+        Host:         "localhost",
+        Port:         5432,
+        Username:     "postgres",
+        Password:     "password",
+        Database:     "myapp",
+        SSLMode:      "disable",
+        MaxOpenConns: 25,
+        MaxIdleConns: 5,
+        ConnMaxLifetime: 5 * time.Minute,
     },
     // ... other config
 }
@@ -101,6 +129,104 @@ The library automatically creates the following indexes for optimal performance:
 }
 ```
 - **Purpose**: Efficient cleanup operations and analytics
+
+## PostgreSQL Setup
+
+### Local Development
+
+For local development, you can use a local PostgreSQL instance:
+
+```bash
+# Install PostgreSQL (Ubuntu/Debian)
+sudo apt-get install postgresql postgresql-contrib
+
+# Install PostgreSQL (macOS with Homebrew)
+brew install postgresql
+
+# Start PostgreSQL service
+sudo systemctl start postgresql  # Linux
+brew services start postgresql    # macOS
+```
+
+### Database Schema
+
+The library automatically creates the following tables and indexes:
+
+#### Users Table
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    is_email_verified BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login_at TIMESTAMP,
+    custom_fields JSONB
+);
+```
+
+#### Email Verifications Table
+```sql
+CREATE TABLE email_verifications (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    token VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    verified_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### Password Resets Table
+```sql
+CREATE TABLE password_resets (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    token VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### PostgreSQL Indexes
+
+The library automatically creates the following indexes:
+
+#### Email Index (Unique)
+```sql
+CREATE INDEX idx_users_email ON users(email);
+```
+- **Purpose**: Ensures email uniqueness and fast email lookups
+
+#### Email Verification Token Index
+```sql
+CREATE INDEX idx_email_verifications_token ON email_verifications(token);
+```
+- **Purpose**: Fast token lookups for email verification
+
+#### Password Reset Token Index
+```sql
+CREATE INDEX idx_password_resets_token ON password_resets(token);
+```
+- **Purpose**: Fast token lookups for password reset
+
+#### User ID Indexes
+```sql
+CREATE INDEX idx_email_verifications_user_id ON email_verifications(user_id);
+CREATE INDEX idx_password_resets_user_id ON password_resets(user_id);
+```
+- **Purpose**: Fast joins between users and verification/reset tables
+
+#### Created At Index
+```sql
+CREATE INDEX idx_users_created_at ON users(created_at);
+```
+- **Purpose**: Efficient cleanup operations and time-based queries
 
 ## User Document Structure
 

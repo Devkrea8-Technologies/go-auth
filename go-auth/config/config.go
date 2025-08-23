@@ -4,6 +4,14 @@ import (
 	"time"
 )
 
+// DatabaseType represents the type of database to use
+type DatabaseType string
+
+const (
+	DatabaseTypeMongoDB  DatabaseType = "mongodb"
+	DatabaseTypePostgreSQL DatabaseType = "postgresql"
+)
+
 // Config represents the main configuration for the authentication library
 type Config struct {
 	Database DatabaseConfig `json:"database"`
@@ -12,11 +20,24 @@ type Config struct {
 	Security SecurityConfig `json:"security"`
 }
 
-// DatabaseConfig represents MongoDB configuration
+// DatabaseConfig represents database configuration
 type DatabaseConfig struct {
-	URI        string `json:"uri" validate:"required"`
-	Database   string `json:"database" validate:"required"`
-	Collection string `json:"collection" default:"users"`
+	Type      DatabaseType `json:"type" validate:"required" default:"mongodb"`
+	URI       string       `json:"uri" validate:"required"`
+	Database  string       `json:"database" validate:"required"`
+	Collection string      `json:"collection" default:"users"`
+	
+	// PostgreSQL specific fields
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	SSLMode  string `json:"ssl_mode" default:"disable"`
+	
+	// Connection pool settings
+	MaxOpenConns    int           `json:"max_open_conns" default:"25"`
+	MaxIdleConns    int           `json:"max_idle_conns" default:"5"`
+	ConnMaxLifetime time.Duration `json:"conn_max_lifetime" default:"5m"`
 }
 
 // JWTConfig represents JWT configuration
@@ -63,7 +84,11 @@ type SecurityConfig struct {
 func DefaultConfig() *Config {
 	return &Config{
 		Database: DatabaseConfig{
+			Type:       DatabaseTypeMongoDB,
 			Collection: "users",
+			MaxOpenConns:    25,
+			MaxIdleConns:    5,
+			ConnMaxLifetime: 5 * time.Minute,
 		},
 		JWT: JWTConfig{
 			AccessTokenTTL:  15 * time.Minute,
