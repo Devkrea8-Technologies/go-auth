@@ -27,6 +27,10 @@ type User struct {
 	LastLoginAt       *time.Time         `bson:"last_login_at,omitempty" json:"last_login_at,omitempty"`
 	IsActive          bool               `bson:"is_active" json:"is_active"`
 
+	// Google OAuth support
+	GoogleID          string             `bson:"google_id,omitempty" json:"google_id,omitempty"`
+	GoogleProfile     *GoogleProfile     `bson:"google_profile,omitempty" json:"google_profile,omitempty"`
+
 	// Custom fields support
 	CustomFields map[string]interface{} `bson:"custom_fields,omitempty" json:"custom_fields,omitempty"`
 }
@@ -136,12 +140,35 @@ type EmailVerificationRequest struct {
 	Token string `json:"token" validate:"required"`
 }
 
+// GoogleAuthRequest represents Google OAuth authentication request
+type GoogleAuthRequest struct {
+	Code string `json:"code" validate:"required"`
+}
+
+// GoogleAuthResponse represents Google OAuth authentication response
+type GoogleAuthResponse struct {
+	AuthURL string `json:"auth_url"`
+	State   string `json:"state"`
+}
+
 // AuthResponse represents authentication response
 type AuthResponse struct {
 	User         *User  `json:"user"`
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token,omitempty"`
 	ExpiresIn    int64  `json:"expires_in"`
+}
+
+// GoogleProfile represents Google OAuth profile information
+type GoogleProfile struct {
+	ID            string `json:"id"`
+	Email         string `json:"email"`
+	VerifiedEmail bool   `json:"verified_email"`
+	Name          string `json:"name"`
+	GivenName     string `json:"given_name"`
+	FamilyName    string `json:"family_name"`
+	Picture       string `json:"picture"`
+	Locale        string `json:"locale"`
 }
 
 // UserResponse represents user response (without sensitive data)
@@ -155,6 +182,10 @@ type UserResponse struct {
 	UpdatedAt       time.Time   `json:"updated_at"`
 	LastLoginAt     *time.Time  `json:"last_login_at,omitempty"`
 	IsActive        bool        `json:"is_active"`
+
+	// Google OAuth support
+	GoogleID      string         `json:"google_id,omitempty"`
+	GoogleProfile *GoogleProfile `json:"google_profile,omitempty"`
 
 	// Custom fields support
 	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`

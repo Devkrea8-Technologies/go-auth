@@ -1,14 +1,17 @@
 # Go Auth Library
 
-A comprehensive authentication library for Go applications with MongoDB support, email verification, and password reset functionality.
+A comprehensive authentication library for Go applications with MongoDB and PostgreSQL support, email verification, password reset functionality, and Google OAuth integration.
 
 ## Features
 
+- **Flexible Authentication**: Email/password and Google OAuth authentication
+- **Multiple Database Support**: MongoDB and PostgreSQL with automatic schema management
 - **User Registration & Login**: Secure user registration and authentication
 - **Email Verification**: Email verification with customizable templates
 - **Password Reset**: Secure password reset functionality
+- **Google OAuth**: Complete OAuth 2.0 integration with Google
 - **JWT Tokens**: Access and refresh token management
-- **MongoDB Support**: Built-in MongoDB integration with proper indexing
+- **Custom Fields**: Extensible user data with custom fields
 - **Configurable**: Highly configurable security settings and email templates
 - **Extensible**: Easy to extend with additional authentication methods
 
@@ -39,6 +42,7 @@ func main() {
     // Create configuration
     cfg := &config.Config{
         Database: config.DatabaseConfig{
+            Type:       config.DatabaseTypeMongoDB,
             URI:        "mongodb://localhost:27017",
             Database:   "myapp",
             Collection: "users",
@@ -64,6 +68,16 @@ func main() {
                 Body:    "Click here to reset: {{.BaseURL}}/reset?token={{.Token}}",
             },
         },
+        Google: config.GoogleConfig{
+            Enabled:      true,
+            ClientID:     "your-google-client-id.apps.googleusercontent.com",
+            ClientSecret: "your-google-client-secret",
+            RedirectURL:  "http://localhost:8080/auth/google/callback",
+        },
+        Security: config.SecurityConfig{
+            RequirePassword:   true,  // Require password authentication
+            RequireGoogleAuth: false, // Google OAuth is optional
+        },
     }
 
     // Initialize auth service
@@ -79,6 +93,10 @@ func main() {
         Password:  "securepassword123",
         FirstName: "John",
         LastName:  "Doe",
+        CustomFields: map[string]interface{}{
+            "phone_number": "+1234567890",
+            "department":   "Engineering",
+        },
     }
 
     response, err := auth.Register(context.Background(), user, "https://yourapp.com")
@@ -87,6 +105,10 @@ func main() {
     }
 
     log.Printf("User registered: %s", response.User.Email)
+
+    // Google OAuth authentication
+    authURL := auth.GetGoogleAuthURL("state-string")
+    log.Printf("Google OAuth URL: %s", authURL)
 }
 ```
 

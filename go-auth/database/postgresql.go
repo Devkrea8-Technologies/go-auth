@@ -66,7 +66,7 @@ func (p *PostgreSQL) createTables() error {
 		CREATE TABLE IF NOT EXISTS users (
 			id SERIAL PRIMARY KEY,
 			email VARCHAR(255) UNIQUE NOT NULL,
-			password VARCHAR(255) NOT NULL,
+			password VARCHAR(255),
 			first_name VARCHAR(255) NOT NULL,
 			last_name VARCHAR(255) NOT NULL,
 			is_email_verified BOOLEAN DEFAULT FALSE,
@@ -74,6 +74,8 @@ func (p *PostgreSQL) createTables() error {
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			last_login_at TIMESTAMP,
+			google_id VARCHAR(255) UNIQUE,
+			google_profile JSONB,
 			custom_fields JSONB
 		);
 	`
@@ -118,6 +120,7 @@ func (p *PostgreSQL) createTables() error {
 	// Create indexes
 	indexes := []string{
 		"CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);",
+		"CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);",
 		"CREATE INDEX IF NOT EXISTS idx_email_verifications_token ON email_verifications(token);",
 		"CREATE INDEX IF NOT EXISTS idx_email_verifications_user_id ON email_verifications(user_id);",
 		"CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token);",
@@ -137,8 +140,8 @@ func (p *PostgreSQL) createTables() error {
 // CreateUser creates a new user in the database
 func (p *PostgreSQL) CreateUser(ctx context.Context, user *types.User) error {
 	query := `
-		INSERT INTO users (email, password, first_name, last_name, is_email_verified, is_active, custom_fields)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO users (email, password, first_name, last_name, is_email_verified, is_active, google_id, google_profile, custom_fields)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id, created_at, updated_at
 	`
 
@@ -151,6 +154,8 @@ func (p *PostgreSQL) CreateUser(ctx context.Context, user *types.User) error {
 		user.LastName,
 		user.IsEmailVerified,
 		user.IsActive,
+		user.GoogleID,
+		user.GoogleProfile,
 		user.CustomFields,
 	).Scan(&id, &createdAt, &updatedAt)
 
@@ -177,7 +182,7 @@ func (p *PostgreSQL) CreateUser(ctx context.Context, user *types.User) error {
 func (p *PostgreSQL) GetUserByEmail(ctx context.Context, email string) (*types.User, error) {
 	query := `
 		SELECT id, email, password, first_name, last_name, is_email_verified, is_active, 
-		       created_at, updated_at, last_login_at, custom_fields
+		       created_at, updated_at, last_login_at, google_id, google_profile, custom_fields
 		FROM users 
 		WHERE email = $1
 	`
@@ -195,6 +200,8 @@ func (p *PostgreSQL) GetUserByEmail(ctx context.Context, email string) (*types.U
 		&user.CreatedAt,
 		&user.UpdatedAt,
 		&lastLoginAt,
+		&user.GoogleID,
+		&user.GoogleProfile,
 		&user.CustomFields,
 	)
 
@@ -239,14 +246,14 @@ func (p *PostgreSQL) GetUserByID(ctx context.Context, userID interface{}) (*type
 	}
 	query := `
 		SELECT id, email, password, first_name, last_name, is_email_verified, is_active, 
-		       created_at, updated_at, last_login_at, custom_fields
+		       created_at, updated_at, last_login_at, google_id, google_profile, custom_fields
 		FROM users 
 		WHERE id = $1
 	`
 
 	var user types.User
 	var lastLoginAt sql.NullTime
-	err := p.db.QueryRowContext(ctx, query, userID).Scan(
+	err := p.db.QueryRowContext(ctx, query, id).Scan(
 		&user.ID,
 		&user.Email,
 		&user.Password,
@@ -257,6 +264,8 @@ func (p *PostgreSQL) GetUserByID(ctx context.Context, userID interface{}) (*type
 		&user.CreatedAt,
 		&user.UpdatedAt,
 		&lastLoginAt,
+		&user.GoogleID,
+		&user.GoogleProfile,
 		&user.CustomFields,
 	)
 
@@ -401,8 +410,8 @@ func (p *PostgreSQL) UpdateUser(ctx context.Context, user *types.User) error {
 		UPDATE users 
 		SET email = $1, password = $2, first_name = $3, last_name = $4, 
 		    is_email_verified = $5, is_active = $6, updated_at = CURRENT_TIMESTAMP,
-		    last_login_at = $7, custom_fields = $8
-		WHERE id = $9
+		    last_login_at = $7, google_id = $8, google_profile = $9, custom_fields = $10
+		WHERE id = $11
 	`
 
 	_, err := p.db.ExecContext(ctx, query,
@@ -413,6 +422,8 @@ func (p *PostgreSQL) UpdateUser(ctx context.Context, user *types.User) error {
 		user.IsEmailVerified,
 		user.IsActive,
 		user.LastLoginAt,
+		user.GoogleID,
+		user.GoogleProfile,
 		user.CustomFields,
 		user.ID,
 	)

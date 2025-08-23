@@ -142,3 +142,13 @@ func (a *Auth) RemoveUserCustomField(ctx context.Context, userID interface{}, ke
 	user.RemoveCustomField(key)
 	return a.service.UpdateUser(ctx, user)
 }
+
+// GetGoogleAuthURL generates Google OAuth authorization URL
+func (a *Auth) GetGoogleAuthURL(state string) string {
+	return a.service.GetGoogleAuthURL(state)
+}
+
+// AuthenticateWithGoogle authenticates a user with Google OAuth
+func (a *Auth) AuthenticateWithGoogle(ctx context.Context, code string) (*types.AuthResponse, error) {
+	return a.service.AuthenticateWithGoogle(ctx, code)
+}

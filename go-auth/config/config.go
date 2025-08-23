@@ -18,6 +18,7 @@ type Config struct {
 	JWT      JWTConfig      `json:"jwt"`
 	Email    EmailConfig    `json:"email"`
 	Security SecurityConfig `json:"security"`
+	Google   GoogleConfig   `json:"google"`
 }
 
 // DatabaseConfig represents database configuration
@@ -69,6 +70,14 @@ type EmailTemplate struct {
 	Body    string `json:"body" validate:"required"`
 }
 
+// GoogleConfig represents Google OAuth configuration
+type GoogleConfig struct {
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+	RedirectURL  string `json:"redirect_url"`
+	Enabled      bool   `json:"enabled" default:"false"`
+}
+
 // SecurityConfig represents security configuration
 type SecurityConfig struct {
 	PasswordMinLength     int           `json:"password_min_length" default:"8"`
@@ -78,6 +87,8 @@ type SecurityConfig struct {
 	MaxLoginAttempts      int           `json:"max_login_attempts" default:"5"`
 	LockoutDuration       time.Duration `json:"lockout_duration" default:"15m"`
 	RequireEmailVerification bool       `json:"require_email_verification" default:"true"`
+	RequirePassword       bool          `json:"require_password" default:"true"`
+	RequireGoogleAuth     bool          `json:"require_google_auth" default:"false"`
 }
 
 // DefaultConfig returns a default configuration
@@ -104,6 +115,11 @@ func DefaultConfig() *Config {
 			MaxLoginAttempts:         5,
 			LockoutDuration:          15 * time.Minute,
 			RequireEmailVerification: true,
+			RequirePassword:          true,
+			RequireGoogleAuth:        false,
+		},
+		Google: GoogleConfig{
+			Enabled: false,
 		},
 	}
 }

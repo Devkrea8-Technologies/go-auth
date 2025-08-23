@@ -91,11 +91,107 @@ cfg := &config.Config{
 }
 ```
 
+## Database Schema
+
+### MongoDB Schema
+
+The library creates a `users` collection with the following document structure:
+
+```javascript
+{
+  "_id": ObjectId,
+  "email": String,                    // Unique email address
+  "password": String,                 // Hashed password (optional with Google OAuth)
+  "first_name": String,               // User's first name
+  "last_name": String,                // User's last name
+  "is_email_verified": Boolean,       // Email verification status
+  "is_active": Boolean,               // Account status
+  "created_at": Date,                 // Account creation timestamp
+  "updated_at": Date,                 // Last update timestamp
+  "last_login_at": Date,              // Last login timestamp (optional)
+  
+  // Google OAuth fields
+  "google_id": String,                // Google OAuth ID (unique, optional)
+  "google_profile": {                 // Google profile information (optional)
+    "id": String,
+    "email": String,
+    "verified_email": Boolean,
+    "name": String,
+    "given_name": String,
+    "family_name": String,
+    "picture": String,
+    "locale": String
+  },
+  
+  // Email verification
+  "email_verification": {             // Email verification data (optional)
+    "token": String,
+    "expires_at": Date
+  },
+  
+  // Password reset
+  "password_reset": {                 // Password reset data (optional)
+    "token": String,
+    "expires_at": Date
+  },
+  
+  // Custom fields
+  "custom_fields": Object             // Flexible custom data (optional)
+}
+```
+
+### PostgreSQL Schema
+
+The library creates the following tables:
+
+#### Users Table
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255),                    -- Optional with Google OAuth
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    is_email_verified BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login_at TIMESTAMP,
+    google_id VARCHAR(255) UNIQUE,            -- Google OAuth ID
+    google_profile JSONB,                     -- Google profile information
+    custom_fields JSONB                       -- Flexible custom data
+);
+```
+
+#### Email Verifications Table
+```sql
+CREATE TABLE email_verifications (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### Password Resets Table
+```sql
+CREATE TABLE password_resets (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
 ## Database Indexes
 
 The library automatically creates the following indexes for optimal performance:
 
-### Email Index (Unique)
+### MongoDB Indexes
+
+#### Email Index (Unique)
 ```javascript
 {
     "email": 1
@@ -103,6 +199,15 @@ The library automatically creates the following indexes for optimal performance:
 ```
 - **Purpose**: Ensures email uniqueness and fast email lookups
 - **Options**: Unique constraint
+
+#### Google ID Index (Unique, Sparse)
+```javascript
+{
+    "google_id": 1
+}
+```
+- **Purpose**: Ensures Google ID uniqueness and fast Google OAuth lookups
+- **Options**: Unique constraint, sparse index (only for documents with google_id)
 
 ### Email Verification Token Index
 ```javascript
@@ -202,6 +307,12 @@ The library automatically creates the following indexes:
 CREATE INDEX idx_users_email ON users(email);
 ```
 - **Purpose**: Ensures email uniqueness and fast email lookups
+
+#### Google ID Index (Unique)
+```sql
+CREATE INDEX idx_users_google_id ON users(google_id);
+```
+- **Purpose**: Ensures Google ID uniqueness and fast Google OAuth lookups
 
 #### Email Verification Token Index
 ```sql

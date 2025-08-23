@@ -15,10 +15,11 @@ import (
 
 // Service represents the main authentication service
 type Service struct {
-	config       *config.Config
-	db           database.Database
-	jwtManager   *JWTManager
-	emailService *email.EmailService
+	config        *config.Config
+	db            database.Database
+	jwtManager    *JWTManager
+	emailService  *email.EmailService
+	googleService *GoogleService
 }
 
 // NewService creates a new authentication service
@@ -46,16 +47,25 @@ func NewService(cfg *config.Config) (*Service, error) {
 	// Initialize email service
 	emailService := email.NewEmailService(cfg)
 
+	// Initialize Google OAuth service
+	googleService := NewGoogleService(cfg)
+
 	return &Service{
-		config:       cfg,
-		db:           db,
-		jwtManager:   jwtManager,
-		emailService: emailService,
+		config:        cfg,
+		db:            db,
+		jwtManager:    jwtManager,
+		emailService:  emailService,
+		googleService: googleService,
 	}, nil
 }
 
 // Register registers a new user
 func (s *Service) Register(ctx context.Context, req *types.UserRegistration, baseURL string) (*types.AuthResponse, error) {
+	// Validate that at least one authentication method is provided
+	if s.config.Security.RequirePassword && req.Password == "" {
+		return nil, fmt.Errorf("password is required")
+	}
+
 	// Check if user already exists
 	existingUser, err := s.db.GetUserByEmail(ctx, req.Email)
 	if err != nil {
@@ -65,16 +75,13 @@ func (s *Service) Register(ctx context.Context, req *types.UserRegistration, bas
 		return nil, fmt.Errorf("user with email %s already exists", req.Email)
 	}
 
-	// Hash password
-	hashedPassword, err := utils.HashPassword(req.Password)
-	if err != nil {
-		return nil, fmt.Errorf("failed to hash password: %w", err)
-	}
-
-	// Generate email verification token
-	verificationToken, err := utils.GenerateToken()
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate verification token: %w", err)
+	var hashedPassword string
+	if req.Password != "" {
+		// Hash password
+		hashedPassword, err = utils.HashPassword(req.Password)
+		if err != nil {
+			return nil, fmt.Errorf("failed to hash password: %w", err)
+		}
 	}
 
 	// Create user
@@ -84,12 +91,21 @@ func (s *Service) Register(ctx context.Context, req *types.UserRegistration, bas
 		FirstName:       req.FirstName,
 		LastName:        req.LastName,
 		IsEmailVerified: false,
-		EmailVerification: &types.EmailVerification{
+		IsActive:        true,
+		CustomFields:    req.CustomFields,
+	}
+
+	// Add email verification if password is provided
+	if hashedPassword != "" {
+		verificationToken, err := utils.GenerateToken()
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate verification token: %w", err)
+		}
+
+		user.EmailVerification = &types.EmailVerification{
 			Token:     verificationToken,
 			ExpiresAt: utils.GenerateExpirationTime(s.config.Security.EmailVerificationTTL),
-		},
-		IsActive:     true,
-		CustomFields: req.CustomFields,
+		}
 	}
 
 	// Save user to database
@@ -97,15 +113,17 @@ func (s *Service) Register(ctx context.Context, req *types.UserRegistration, bas
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	// Send verification email
-	if err := s.emailService.SendEmailVerification(
-		user.Email,
-		user.FirstName,
-		verificationToken,
-		baseURL,
-	); err != nil {
-		// Log error but don't fail registration
-		// TODO: Add proper logging
+	// Send verification email if email verification is enabled
+	if user.EmailVerification != nil && s.config.Security.RequireEmailVerification {
+		if err := s.emailService.SendEmailVerification(
+			user.Email,
+			user.FirstName,
+			user.EmailVerification.Token,
+			baseURL,
+		); err != nil {
+			// Log error but don't fail registration
+			// TODO: Add proper logging
+		}
 	}
 
 	// Generate tokens
@@ -141,6 +159,11 @@ func (s *Service) Login(ctx context.Context, req *types.UserLogin) (*types.AuthR
 	// Check if user is active
 	if !user.IsActive {
 		return nil, fmt.Errorf("account is deactivated")
+	}
+
+	// Check if user has password authentication
+	if user.Password == "" {
+		return nil, fmt.Errorf("password authentication not available for this user")
 	}
 
 	// Verify password
@@ -363,4 +386,68 @@ func (s *Service) Close(ctx context.Context) error {
 // UpdateUser updates a user in the database
 func (s *Service) UpdateUser(ctx context.Context, user *types.User) error {
 	return s.db.UpdateUser(ctx, user)
+}
+
+// GetGoogleAuthURL generates Google OAuth authorization URL
+func (s *Service) GetGoogleAuthURL(state string) string {
+	return s.googleService.GetAuthURL(state)
+}
+
+// AuthenticateWithGoogle authenticates a user with Google OAuth
+func (s *Service) AuthenticateWithGoogle(ctx context.Context, code string) (*types.AuthResponse, error) {
+	// Authenticate with Google
+	googleUser, err := s.googleService.AuthenticateWithGoogle(ctx, code)
+	if err != nil {
+		return nil, fmt.Errorf("failed to authenticate with Google: %w", err)
+	}
+
+	// Check if user already exists
+	existingUser, err := s.db.GetUserByEmail(ctx, googleUser.Email)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check existing user: %w", err)
+	}
+
+	var user *types.User
+	if existingUser != nil {
+		// User exists, update Google information
+		existingUser.GoogleID = googleUser.GoogleID
+		existingUser.GoogleProfile = googleUser.GoogleProfile
+		existingUser.IsEmailVerified = googleUser.IsEmailVerified
+		existingUser.FirstName = googleUser.FirstName
+		existingUser.LastName = googleUser.LastName
+
+		if err := s.db.UpdateUser(ctx, existingUser); err != nil {
+			return nil, fmt.Errorf("failed to update user: %w", err)
+		}
+		user = existingUser
+	} else {
+		// Create new user
+		user = googleUser
+		if err := s.db.CreateUser(ctx, user); err != nil {
+			return nil, fmt.Errorf("failed to create user: %w", err)
+		}
+	}
+
+	// Update last login
+	if err := s.db.UpdateLastLogin(ctx, user.ID); err != nil {
+		return nil, fmt.Errorf("failed to update last login: %w", err)
+	}
+
+	// Generate tokens
+	accessToken, err := s.jwtManager.GenerateAccessToken(user)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate access token: %w", err)
+	}
+
+	refreshToken, err := s.jwtManager.GenerateRefreshToken(user)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
+	}
+
+	return &types.AuthResponse{
+		User:         user,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresIn:    int64(s.config.JWT.AccessTokenTTL.Seconds()),
+	}, nil
 }

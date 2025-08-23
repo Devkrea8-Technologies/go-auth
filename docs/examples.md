@@ -73,6 +73,128 @@ func main() {
 }
 ```
 
+## Google OAuth Integration
+
+### Basic Google OAuth Setup
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "time"
+    
+    "github.com/go-auth"
+    "github.com/go-auth/config"
+    "github.com/go-auth/types"
+)
+
+func main() {
+    // Create configuration with Google OAuth enabled
+    cfg := &config.Config{
+        Database: config.DatabaseConfig{
+            Type:       config.DatabaseTypeMongoDB,
+            URI:        "mongodb://localhost:27017",
+            Database:   "myapp",
+            Collection: "users",
+        },
+        JWT: config.JWTConfig{
+            SecretKey:       "your-secret-key-here",
+            AccessTokenTTL:  15 * time.Minute,
+            RefreshTokenTTL: 7 * 24 * time.Hour,
+        },
+        Google: config.GoogleConfig{
+            Enabled:      true,
+            ClientID:     "your-google-client-id.apps.googleusercontent.com",
+            ClientSecret: "your-google-client-secret",
+            RedirectURL:  "http://localhost:8080/auth/google/callback",
+        },
+        Security: config.SecurityConfig{
+            RequirePassword:   false, // Allow users without passwords
+            RequireGoogleAuth: false, // Google OAuth is optional
+        },
+    }
+
+    // Initialize auth service
+    auth, err := goauth.New(cfg)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer auth.Close(context.Background())
+
+    // Generate Google OAuth URL
+    state := "random-state-string-for-security"
+    authURL := auth.GetGoogleAuthURL(state)
+    fmt.Printf("Google OAuth URL: %s\n", authURL)
+
+    // In a real application, redirect user to authURL
+    // Then handle the callback with the authorization code
+}
+```
+
+### Google OAuth Callback Handler
+
+```go
+func handleGoogleCallback(auth *goauth.Auth, code string) {
+    // Authenticate with Google OAuth
+    authResponse, err := auth.AuthenticateWithGoogle(context.Background(), code)
+    if err != nil {
+        log.Printf("Google authentication failed: %v", err)
+        return
+    }
+
+    fmt.Printf("Google authentication successful: %s\n", authResponse.User.Email)
+    fmt.Printf("Google ID: %s\n", authResponse.User.GoogleID)
+    fmt.Printf("Profile picture: %s\n", authResponse.User.GoogleProfile.Picture)
+    fmt.Printf("Access token: %s\n", authResponse.AccessToken)
+}
+```
+
+### Flexible Authentication (Password + Google OAuth)
+
+```go
+func main() {
+    // Configuration allowing both password and Google OAuth
+    cfg := &config.Config{
+        // ... other config
+        Security: config.SecurityConfig{
+            RequirePassword:   true,  // Require password authentication
+            RequireGoogleAuth: false, // Google OAuth is optional
+        },
+    }
+
+    auth, err := goauth.New(cfg)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer auth.Close(context.Background())
+
+    // Register user with password (Google OAuth can be added later)
+    user := &types.UserRegistration{
+        Email:     "user@example.com",
+        Password:  "securepassword123",
+        FirstName: "John",
+        LastName:  "Doe",
+        CustomFields: map[string]interface{}{
+            "phone_number": "+1234567890",
+            "department":   "Engineering",
+        },
+    }
+
+    response, err := auth.Register(context.Background(), user, "https://myapp.com")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("User registered: %s\n", response.User.Email)
+
+    // Later, user can authenticate with Google OAuth
+    // The system will link the Google account to the existing user
+}
+```
+
 ## Web Framework Integration
 
 ### Gin Framework

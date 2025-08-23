@@ -293,6 +293,62 @@ if err != nil {
 fmt.Printf("Authenticated user: %s\n", user.Email)
 ```
 
+## Google OAuth Methods
+
+### GetGoogleAuthURL
+
+Generates Google OAuth authorization URL.
+
+```go
+func (a *Auth) GetGoogleAuthURL(state string) string
+```
+
+**Parameters:**
+- `state` - State parameter for CSRF protection
+
+**Returns:**
+- `string` - Google OAuth authorization URL (empty if not enabled)
+
+**Example:**
+```go
+state := "random-state-string"
+authURL := auth.GetGoogleAuthURL(state)
+if authURL != "" {
+    fmt.Printf("Google OAuth URL: %s\n", authURL)
+} else {
+    fmt.Println("Google OAuth is not enabled")
+}
+```
+
+### AuthenticateWithGoogle
+
+Authenticates a user with Google OAuth.
+
+```go
+func (a *Auth) AuthenticateWithGoogle(ctx context.Context, code string) (*types.AuthResponse, error)
+```
+
+**Parameters:**
+- `ctx` - Context for the operation
+- `code` - Authorization code from Google OAuth callback
+
+**Returns:**
+- `*types.AuthResponse` - Authentication response with tokens
+- `error` - Error if authentication fails
+
+**Example:**
+```go
+// Handle Google OAuth callback
+authResponse, err := auth.AuthenticateWithGoogle(context.Background(), code)
+if err != nil {
+    log.Printf("Google authentication failed: %v", err)
+} else {
+    fmt.Printf("Google authentication successful: %s\n", authResponse.User.Email)
+    fmt.Printf("Google ID: %s\n", authResponse.User.GoogleID)
+    fmt.Printf("Access token: %s\n", authResponse.AccessToken)
+}
+```
+
 ## Utility Methods
 
 ### Close
@@ -450,9 +506,12 @@ if err != nil {
 ```go
 type UserRegistration struct {
     Email     string `json:"email" validate:"required,email"`
-    Password  string `json:"password" validate:"required,min=8"`
+    Password  string `json:"password" validate:"required,min=8"` // Optional when Google OAuth is enabled
     FirstName string `json:"first_name" validate:"required"`
     LastName  string `json:"last_name" validate:"required"`
+    
+    // Custom fields support
+    CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
 }
 ```
 
@@ -505,7 +564,7 @@ type AuthResponse struct {
 
 ```go
 type User struct {
-    ID                primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+    ID                interface{}        `bson:"_id,omitempty" json:"id,omitempty"`
     Email             string             `bson:"email" json:"email"`
     Password          string             `bson:"password" json:"-"`
     FirstName         string             `bson:"first_name" json:"first_name"`
@@ -517,7 +576,45 @@ type User struct {
     UpdatedAt         time.Time          `bson:"updated_at" json:"updated_at"`
     LastLoginAt       *time.Time         `bson:"last_login_at,omitempty" json:"last_login_at,omitempty"`
     IsActive          bool               `bson:"is_active" json:"is_active"`
+    
+    // Google OAuth support
+    GoogleID          string             `bson:"google_id,omitempty" json:"google_id,omitempty"`
+    GoogleProfile     *GoogleProfile     `bson:"google_profile,omitempty" json:"google_profile,omitempty"`
+
+    // Custom fields support
     CustomFields      map[string]interface{} `bson:"custom_fields,omitempty" json:"custom_fields,omitempty"`
+}
+```
+
+### GoogleProfile
+
+```go
+type GoogleProfile struct {
+    ID            string `json:"id"`
+    Email         string `json:"email"`
+    VerifiedEmail bool   `json:"verified_email"`
+    Name          string `json:"name"`
+    GivenName     string `json:"given_name"`
+    FamilyName    string `json:"family_name"`
+    Picture       string `json:"picture"`
+    Locale        string `json:"locale"`
+}
+```
+
+### GoogleAuthRequest
+
+```go
+type GoogleAuthRequest struct {
+    Code string `json:"code" validate:"required"`
+}
+```
+
+### GoogleAuthResponse
+
+```go
+type GoogleAuthResponse struct {
+    AuthURL string `json:"auth_url"`
+    State   string `json:"state"`
 }
 ```
 

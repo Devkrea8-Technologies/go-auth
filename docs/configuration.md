@@ -12,18 +12,32 @@ type Config struct {
     JWT      JWTConfig      `json:"jwt"`
     Email    EmailConfig    `json:"email"`
     Security SecurityConfig `json:"security"`
+    Google   GoogleConfig   `json:"google"`
 }
 ```
 
 ## Database Configuration
 
-MongoDB connection and collection settings:
+Database connection and collection settings. Supports both MongoDB and PostgreSQL:
 
 ```go
 type DatabaseConfig struct {
-    URI        string `json:"uri" validate:"required"`
-    Database   string `json:"database" validate:"required"`
-    Collection string `json:"collection" default:"users"`
+    Type      DatabaseType `json:"type" validate:"required" default:"mongodb"`
+    URI       string       `json:"uri" validate:"required"`
+    Database  string       `json:"database" validate:"required"`
+    Collection string      `json:"collection" default:"users"`
+    
+    // PostgreSQL specific fields
+    Host     string `json:"host"`
+    Port     int    `json:"port"`
+    Username string `json:"username"`
+    Password string `json:"password"`
+    SSLMode  string `json:"ssl_mode" default:"disable"`
+    
+    // Connection pool settings
+    MaxOpenConns    int           `json:"max_open_conns" default:"25"`
+    MaxIdleConns    int           `json:"max_idle_conns" default:"5"`
+    ConnMaxLifetime time.Duration `json:"conn_max_lifetime" default:"5m"`
 }
 ```
 
@@ -189,6 +203,47 @@ Email: config.EmailConfig{
 },
 ```
 
+## Google OAuth Configuration
+
+Google OAuth 2.0 settings for social authentication:
+
+```go
+type GoogleConfig struct {
+    ClientID     string `json:"client_id"`
+    ClientSecret string `json:"client_secret"`
+    RedirectURL  string `json:"redirect_url"`
+    Enabled      bool   `json:"enabled" default:"false"`
+}
+```
+
+### Options
+
+- **ClientID**: Google OAuth client ID (required if enabled)
+  - Get this from Google Cloud Console
+  - Example: `"123456789-abc123.apps.googleusercontent.com"`
+
+- **ClientSecret**: Google OAuth client secret (required if enabled)
+  - Get this from Google Cloud Console
+  - Keep this secret and secure
+
+- **RedirectURL**: OAuth callback URL (required if enabled)
+  - Must match the URL configured in Google Cloud Console
+  - Example: `"http://localhost:8080/auth/google/callback"`
+
+- **Enabled**: Enable Google OAuth (default: false)
+  - Set to `true` to enable Google authentication
+
+### Example
+
+```go
+Google: config.GoogleConfig{
+    Enabled:      true,
+    ClientID:     "your-google-client-id.apps.googleusercontent.com",
+    ClientSecret: "your-google-client-secret",
+    RedirectURL:  "http://localhost:8080/auth/google/callback",
+},
+```
+
 ## Security Configuration
 
 Security settings and policies:
@@ -202,6 +257,8 @@ type SecurityConfig struct {
     MaxLoginAttempts      int           `json:"max_login_attempts" default:"5"`
     LockoutDuration       time.Duration `json:"lockout_duration" default:"15m"`
     RequireEmailVerification bool       `json:"require_email_verification" default:"true"`
+    RequirePassword       bool          `json:"require_password" default:"true"`
+    RequireGoogleAuth     bool          `json:"require_google_auth" default:"false"`
 }
 ```
 
