@@ -334,6 +334,115 @@ cfg := auth.GetConfig()
 fmt.Printf("Database: %s\n", cfg.Database.Database)
 ```
 
+## Custom Fields Methods
+
+### UpdateUserCustomFields
+
+Updates all custom fields for a user.
+
+```go
+func (a *Auth) UpdateUserCustomFields(ctx context.Context, userID primitive.ObjectID, customFields map[string]interface{}) error
+```
+
+**Parameters:**
+- `ctx` - Context for the operation
+- `userID` - User's ObjectID
+- `customFields` - Map of custom field names to values
+
+**Returns:**
+- `error` - Error if operation fails
+
+**Example:**
+```go
+customFields := map[string]interface{}{
+    "phone_number": "+1234567890",
+    "age":          30,
+    "department":   "Engineering",
+}
+
+err := auth.UpdateUserCustomFields(context.Background(), userID, customFields)
+if err != nil {
+    log.Printf("Failed to update custom fields: %v", err)
+}
+```
+
+### SetUserCustomField
+
+Sets a single custom field for a user.
+
+```go
+func (a *Auth) SetUserCustomField(ctx context.Context, userID primitive.ObjectID, key string, value interface{}) error
+```
+
+**Parameters:**
+- `ctx` - Context for the operation
+- `userID` - User's ObjectID
+- `key` - Custom field name
+- `value` - Custom field value
+
+**Returns:**
+- `error` - Error if operation fails
+
+**Example:**
+```go
+err := auth.SetUserCustomField(context.Background(), userID, "phone_number", "+1234567890")
+if err != nil {
+    log.Printf("Failed to set custom field: %v", err)
+}
+```
+
+### GetUserCustomField
+
+Gets a single custom field for a user.
+
+```go
+func (a *Auth) GetUserCustomField(ctx context.Context, userID primitive.ObjectID, key string) (interface{}, bool, error)
+```
+
+**Parameters:**
+- `ctx` - Context for the operation
+- `userID` - User's ObjectID
+- `key` - Custom field name
+
+**Returns:**
+- `interface{}` - Custom field value
+- `bool` - Whether the field exists
+- `error` - Error if operation fails
+
+**Example:**
+```go
+value, exists, err := auth.GetUserCustomField(context.Background(), userID, "phone_number")
+if err != nil {
+    log.Printf("Failed to get custom field: %v", err)
+} else if exists {
+    fmt.Printf("Phone number: %v\n", value)
+}
+```
+
+### RemoveUserCustomField
+
+Removes a custom field for a user.
+
+```go
+func (a *Auth) RemoveUserCustomField(ctx context.Context, userID primitive.ObjectID, key string) error
+```
+
+**Parameters:**
+- `ctx` - Context for the operation
+- `userID` - User's ObjectID
+- `key` - Custom field name to remove
+
+**Returns:**
+- `error` - Error if operation fails
+
+**Example:**
+```go
+err := auth.RemoveUserCustomField(context.Background(), userID, "phone_number")
+if err != nil {
+    log.Printf("Failed to remove custom field: %v", err)
+}
+```
+
 ## Data Types
 
 ### UserRegistration
@@ -408,7 +517,26 @@ type User struct {
     UpdatedAt         time.Time          `bson:"updated_at" json:"updated_at"`
     LastLoginAt       *time.Time         `bson:"last_login_at,omitempty" json:"last_login_at,omitempty"`
     IsActive          bool               `bson:"is_active" json:"is_active"`
+    CustomFields      map[string]interface{} `bson:"custom_fields,omitempty" json:"custom_fields,omitempty"`
 }
+```
+
+**Custom Fields Methods:**
+```go
+// GetCustomFields returns all custom fields
+func (u *User) GetCustomFields() map[string]interface{}
+
+// SetCustomFields sets all custom fields
+func (u *User) SetCustomFields(fields map[string]interface{})
+
+// SetCustomField sets a single custom field
+func (u *User) SetCustomField(key string, value interface{})
+
+// GetCustomField gets a single custom field
+func (u *User) GetCustomField(key string) (interface{}, bool)
+
+// RemoveCustomField removes a custom field
+func (u *User) RemoveCustomField(key string)
 ```
 
 ## Error Handling

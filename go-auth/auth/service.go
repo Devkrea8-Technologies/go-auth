@@ -77,7 +77,8 @@ func (s *Service) Register(ctx context.Context, req *types.UserRegistration, bas
 			Token:     verificationToken,
 			ExpiresAt: utils.GenerateExpirationTime(s.config.Security.EmailVerificationTTL),
 		},
-		IsActive: true,
+		IsActive:     true,
+		CustomFields: req.CustomFields,
 	}
 
 	// Save user to database
@@ -351,4 +352,9 @@ func (s *Service) ValidateToken(ctx context.Context, tokenString string) (*types
 // Close closes the service and database connection
 func (s *Service) Close(ctx context.Context) error {
 	return s.db.Close(ctx)
+}
+
+// UpdateUser updates a user in the database
+func (s *Service) UpdateUser(ctx context.Context, user *types.User) error {
+	return s.db.UpdateUser(ctx, user)
 }

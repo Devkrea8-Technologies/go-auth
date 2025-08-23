@@ -88,3 +88,59 @@ func (a *Auth) Close(ctx context.Context) error {
 func (a *Auth) GetConfig() *config.Config {
 	return a.config
 }
+
+// UpdateUserCustomFields updates custom fields for a user
+func (a *Auth) UpdateUserCustomFields(ctx context.Context, userID primitive.ObjectID, customFields map[string]interface{}) error {
+	user, err := a.service.GetUserByID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("failed to get user: %w", err)
+	}
+	if user == nil {
+		return fmt.Errorf("user not found")
+	}
+
+	user.SetCustomFields(customFields)
+	return a.service.UpdateUser(ctx, user)
+}
+
+// SetUserCustomField sets a single custom field for a user
+func (a *Auth) SetUserCustomField(ctx context.Context, userID primitive.ObjectID, key string, value interface{}) error {
+	user, err := a.service.GetUserByID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("failed to get user: %w", err)
+	}
+	if user == nil {
+		return fmt.Errorf("user not found")
+	}
+
+	user.SetCustomField(key, value)
+	return a.service.UpdateUser(ctx, user)
+}
+
+// GetUserCustomField gets a single custom field for a user
+func (a *Auth) GetUserCustomField(ctx context.Context, userID primitive.ObjectID, key string) (interface{}, bool, error) {
+	user, err := a.service.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to get user: %w", err)
+	}
+	if user == nil {
+		return nil, false, fmt.Errorf("user not found")
+	}
+
+	value, exists := user.GetCustomField(key)
+	return value, exists, nil
+}
+
+// RemoveUserCustomField removes a custom field for a user
+func (a *Auth) RemoveUserCustomField(ctx context.Context, userID primitive.ObjectID, key string) error {
+	user, err := a.service.GetUserByID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("failed to get user: %w", err)
+	}
+	if user == nil {
+		return fmt.Errorf("user not found")
+	}
+
+	user.RemoveCustomField(key)
+	return a.service.UpdateUser(ctx, user)
+}

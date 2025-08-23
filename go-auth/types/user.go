@@ -6,6 +6,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// CustomFields interface allows users to define custom fields
+type CustomFields interface {
+	// GetCustomFields returns a map of custom field names to values
+	GetCustomFields() map[string]interface{}
+	// SetCustomFields sets custom fields from a map
+	SetCustomFields(fields map[string]interface{})
+}
+
 // User represents a user in the authentication system
 type User struct {
 	ID                primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
@@ -20,19 +28,59 @@ type User struct {
 	UpdatedAt         time.Time          `bson:"updated_at" json:"updated_at"`
 	LastLoginAt       *time.Time         `bson:"last_login_at,omitempty" json:"last_login_at,omitempty"`
 	IsActive          bool               `bson:"is_active" json:"is_active"`
+
+	// Custom fields support
+	CustomFields map[string]interface{} `bson:"custom_fields,omitempty" json:"custom_fields,omitempty"`
+}
+
+// GetCustomFields implements CustomFields interface
+func (u *User) GetCustomFields() map[string]interface{} {
+	if u.CustomFields == nil {
+		u.CustomFields = make(map[string]interface{})
+	}
+	return u.CustomFields
+}
+
+// SetCustomFields implements CustomFields interface
+func (u *User) SetCustomFields(fields map[string]interface{}) {
+	u.CustomFields = fields
+}
+
+// SetCustomField sets a single custom field
+func (u *User) SetCustomField(key string, value interface{}) {
+	if u.CustomFields == nil {
+		u.CustomFields = make(map[string]interface{})
+	}
+	u.CustomFields[key] = value
+}
+
+// GetCustomField gets a single custom field
+func (u *User) GetCustomField(key string) (interface{}, bool) {
+	if u.CustomFields == nil {
+		return nil, false
+	}
+	value, exists := u.CustomFields[key]
+	return value, exists
+}
+
+// RemoveCustomField removes a custom field
+func (u *User) RemoveCustomField(key string) {
+	if u.CustomFields != nil {
+		delete(u.CustomFields, key)
+	}
 }
 
 // EmailVerification represents email verification data
 type EmailVerification struct {
-	Token     string    `bson:"token" json:"token"`
-	ExpiresAt time.Time `bson:"expires_at" json:"expires_at"`
+	Token      string     `bson:"token" json:"token"`
+	ExpiresAt  time.Time  `bson:"expires_at" json:"expires_at"`
 	VerifiedAt *time.Time `bson:"verified_at,omitempty" json:"verified_at,omitempty"`
 }
 
 // PasswordReset represents password reset data
 type PasswordReset struct {
-	Token     string    `bson:"token" json:"token"`
-	ExpiresAt time.Time `bson:"expires_at" json:"expires_at"`
+	Token     string     `bson:"token" json:"token"`
+	ExpiresAt time.Time  `bson:"expires_at" json:"expires_at"`
 	UsedAt    *time.Time `bson:"used_at,omitempty" json:"used_at,omitempty"`
 }
 
@@ -42,6 +90,30 @@ type UserRegistration struct {
 	Password  string `json:"password" validate:"required,min=8"`
 	FirstName string `json:"first_name" validate:"required"`
 	LastName  string `json:"last_name" validate:"required"`
+
+	// Custom fields support
+	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
+}
+
+// GetCustomFields implements CustomFields interface
+func (ur *UserRegistration) GetCustomFields() map[string]interface{} {
+	if ur.CustomFields == nil {
+		ur.CustomFields = make(map[string]interface{})
+	}
+	return ur.CustomFields
+}
+
+// SetCustomFields implements CustomFields interface
+func (ur *UserRegistration) SetCustomFields(fields map[string]interface{}) {
+	ur.CustomFields = fields
+}
+
+// SetCustomField sets a single custom field
+func (ur *UserRegistration) SetCustomField(key string, value interface{}) {
+	if ur.CustomFields == nil {
+		ur.CustomFields = make(map[string]interface{})
+	}
+	ur.CustomFields[key] = value
 }
 
 // UserLogin represents user login request
@@ -85,4 +157,20 @@ type UserResponse struct {
 	UpdatedAt       time.Time          `json:"updated_at"`
 	LastLoginAt     *time.Time         `json:"last_login_at,omitempty"`
 	IsActive        bool               `json:"is_active"`
+
+	// Custom fields support
+	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
+}
+
+// GetCustomFields implements CustomFields interface
+func (ur *UserResponse) GetCustomFields() map[string]interface{} {
+	if ur.CustomFields == nil {
+		ur.CustomFields = make(map[string]interface{})
+	}
+	return ur.CustomFields
+}
+
+// SetCustomFields implements CustomFields interface
+func (ur *UserResponse) SetCustomFields(fields map[string]interface{}) {
+	ur.CustomFields = fields
 }
