@@ -139,6 +139,18 @@ The library creates a `users` collection with the following document structure:
     "is_private": Boolean
   },
   
+  // Apple Sign-In fields
+  "apple_id": String,                 // Apple Sign-In ID (unique, optional)
+  "apple_profile": {                  // Apple profile information (optional)
+    "id": String,
+    "email": String,
+    "email_verified": String,         // "true" or "false"
+    "is_private_email": String,       // "true" or "false"
+    "real_user_status": Number,       // 0: Unsupported, 1: Unknown, 2: LikelyReal
+    "first_name": String,             // optional
+    "last_name": String               // optional
+  },
+  
   // Email verification
   "email_verification": {             // Email verification data (optional)
     "token": String,
@@ -177,6 +189,8 @@ CREATE TABLE users (
     google_profile JSONB,                     -- Google profile information
     tiktok_id VARCHAR(255) UNIQUE,            -- TikTok OAuth ID
     tiktok_profile JSONB,                     -- TikTok profile information
+    apple_id VARCHAR(255) UNIQUE,             -- Apple Sign-In ID
+    apple_profile JSONB,                      -- Apple profile information
     custom_fields JSONB                       -- Flexible custom data
 );
 ```
@@ -235,6 +249,15 @@ The library automatically creates the following indexes for optimal performance:
 ```
 - **Purpose**: Ensures TikTok ID uniqueness and fast TikTok OAuth lookups
 - **Options**: Unique constraint, sparse index (only for documents with tiktok_id)
+
+#### Apple ID Index (Unique, Sparse)
+```javascript
+{
+    "apple_id": 1
+}
+```
+- **Purpose**: Ensures Apple ID uniqueness and fast Apple Sign-In lookups
+- **Options**: Unique constraint, sparse index (only for documents with apple_id)
 
 ### Email Verification Token Index
 ```javascript
@@ -346,6 +369,12 @@ CREATE INDEX idx_users_google_id ON users(google_id);
 CREATE INDEX idx_users_tiktok_id ON users(tiktok_id);
 ```
 - **Purpose**: Ensures TikTok ID uniqueness and fast TikTok OAuth lookups
+
+#### Apple ID Index (Unique)
+```sql
+CREATE INDEX idx_users_apple_id ON users(apple_id);
+```
+- **Purpose**: Ensures Apple ID uniqueness and fast Apple Sign-In lookups
 
 #### Email Verification Token Index
 ```sql

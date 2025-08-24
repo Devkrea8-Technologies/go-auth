@@ -278,12 +278,115 @@ type TikTokConfig struct {
 ### Example
 
 ```go
-TikTok: config.TikTokConfig{
-    Enabled:      true,
-    ClientID:     "your-tiktok-client-key",
-    ClientSecret: "your-tiktok-client-secret",
-    RedirectURL:  "http://localhost:8080/auth/tiktok/callback",
+    TikTok: config.TikTokConfig{
+        Enabled:      true,
+        ClientID:     "your-tiktok-client-key",
+        ClientSecret: "your-tiktok-client-secret",
+        RedirectURL:  "http://localhost:8080/auth/tiktok/callback",
+    },
+    Apple: config.AppleConfig{
+        Enabled:     true,
+        ClientID:    "com.yourcompany.yourapp", // Your Services ID
+        TeamID:      "ABC123DEF4",              // Your Apple Developer Team ID
+        KeyID:       "KEY123456",               // Your Private Key ID
+        PrivateKey: `-----BEGIN PRIVATE KEY-----
+MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQg+s07iAcV4u1uV1Jg
+YjqUqC9N9d3qJVmQZ/3FzJ6SfGigCgYIKoZIzj0DAQehRANCAASdX41vxjHdFyTz
+h0E1bJmQtHj7FfTb/J3L0K8eM0NzBgt1769Oua3HkKmSBlkQf1IO2h06d1cGFyC+
+-----END PRIVATE KEY-----`,
+        RedirectURL: "http://localhost:8080/auth/apple/callback",
+    },
+```
+
+## Apple Sign-In Configuration
+
+Apple Sign-In settings for social authentication:
+
+```go
+type AppleConfig struct {
+    ClientID    string `json:"client_id"`    // Services ID (e.g., com.yourcompany.yourapp)
+    TeamID      string `json:"team_id"`      // Apple Developer Team ID
+    KeyID       string `json:"key_id"`       // Private Key ID
+    PrivateKey  string `json:"private_key"`  // Private Key content (PEM format)
+    RedirectURL string `json:"redirect_url"` // OAuth redirect URL
+    Enabled     bool   `json:"enabled" default:"false"`
+}
+```
+
+### Options
+
+- **ClientID**: Your Services ID (required if enabled)
+  - This is your app's bundle identifier (e.g., `com.yourcompany.yourapp`)
+  - Get this from Apple Developer Console
+  - Example: `"com.yourcompany.yourapp"`
+
+- **TeamID**: Your Apple Developer Team ID (required if enabled)
+  - Found in Apple Developer Console
+  - Example: `"ABC123DEF4"`
+
+- **KeyID**: The ID of your private key (required if enabled)
+  - Found in Apple Developer Console when you create a private key
+  - Example: `"KEY123456"`
+
+- **PrivateKey**: Your private key content in PEM format (required if enabled)
+  - Download from Apple Developer Console
+  - Must be in PEM format
+  - Example: `"-----BEGIN PRIVATE KEY-----\nMIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQg+s07iAcV4u1uV1Jg\nYjqUqC9N9d3qJVmQZ/3FzJ6SfGigCgYIKoZIzj0DAQehRANCAASdX41vxjHdFyTz\nh0E1bJmQtHj7FfTb/J3L0K8eM0NzBgt1769Oua3HkKmSBlkQf1IO2h06d1cGFyC+\n-----END PRIVATE KEY-----"`
+
+- **RedirectURL**: OAuth callback URL (required if enabled)
+  - Must match the URL configured in Apple Developer Console
+  - Example: `"http://localhost:8080/auth/apple/callback"`
+
+- **Enabled**: Enable Apple Sign-In (default: false)
+  - Set to `true` to enable Apple Sign-In authentication
+
+### Example
+
+```go
+Apple: config.AppleConfig{
+    Enabled:     true,
+    ClientID:    "com.yourcompany.yourapp", // Your Services ID
+    TeamID:      "ABC123DEF4",              // Your Apple Developer Team ID
+    KeyID:       "KEY123456",               // Your Private Key ID
+    PrivateKey: `-----BEGIN PRIVATE KEY-----
+MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQg+s07iAcV4u1uV1Jg
+YjqUqC9N9d3qJVmQZ/3FzJ6SfGigCgYIKoZIzj0DAQehRANCAASdX41vxjHdFyTz
+h0E1bJmQtHj7FfTb/J3L0K8eM0NzBgt1769Oua3HkKmSBlkQf1IO2h06d1cGFyC+
+-----END PRIVATE KEY-----`,
+    RedirectURL: "http://localhost:8080/auth/apple/callback",
 },
+```
+
+### Apple Developer Setup
+
+To use Apple Sign-In, you need to set up your Apple Developer account:
+
+1. **Create a Services ID** in Apple Developer Console
+   - Go to Certificates, Identifiers & Profiles
+   - Click "Identifiers" and then "+"
+   - Select "Services IDs" and click "Continue"
+   - Enter a description and identifier (e.g., `com.yourcompany.yourapp`)
+   - Enable "Sign In with Apple" and click "Continue"
+
+2. **Generate a Private Key** for client authentication
+   - Go to Certificates, Identifiers & Profiles
+   - Click "Keys" and then "+"
+   - Enter a name and enable "Sign In with Apple"
+   - Click "Continue" and then "Register"
+   - Download the private key file (`.p8` format)
+   - Note the Key ID
+
+3. **Configure Sign in with Apple** for your Services ID
+   - Go back to your Services ID
+   - Click "Edit" next to "Sign In with Apple"
+   - Add your domain and redirect URLs
+   - Click "Save"
+
+4. **Note your credentials** for configuration
+   - Team ID: Found in the top-right corner of Apple Developer Console
+   - Services ID: The identifier you created (e.g., `com.yourcompany.yourapp`)
+   - Key ID: The ID of the private key you created
+   - Private Key: The content of the downloaded `.p8` file (convert to PEM format)
 ```
 
 ## Security Configuration
@@ -302,6 +405,7 @@ type SecurityConfig struct {
     RequirePassword       bool          `json:"require_password" default:"true"`
     RequireGoogleAuth     bool          `json:"require_google_auth" default:"false"`
     RequireTikTokAuth     bool          `json:"require_tiktok_auth" default:"false"`
+    RequireAppleAuth      bool          `json:"require_apple_auth" default:"false"`
 }
 ```
 

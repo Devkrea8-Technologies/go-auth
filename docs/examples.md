@@ -448,6 +448,129 @@ func main() {
 }
 ```
 
+## Apple Sign-In Integration
+
+### Basic Apple Sign-In Setup
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "time"
+    
+    "github.com/go-auth"
+    "github.com/go-auth/config"
+    "github.com/go-auth/types"
+)
+
+func main() {
+    // Create configuration with Apple Sign-In enabled
+    cfg := &config.Config{
+        Database: config.DatabaseConfig{
+            Type:       config.DatabaseTypeMongoDB,
+            URI:        "mongodb://localhost:27017",
+            Database:   "myapp",
+            Collection: "users",
+        },
+        JWT: config.JWTConfig{
+            SecretKey:       "your-secret-key-here",
+            AccessTokenTTL:  15 * time.Minute,
+            RefreshTokenTTL: 7 * 24 * time.Hour,
+        },
+        Apple: config.AppleConfig{
+            Enabled:     true,
+            ClientID:    "com.yourcompany.yourapp", // Your Services ID
+            TeamID:      "ABC123DEF4",              // Your Apple Developer Team ID
+            KeyID:       "KEY123456",               // Your Private Key ID
+            PrivateKey: `-----BEGIN PRIVATE KEY-----
+MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQg+s07iAcV4u1uV1Jg
+YjqUqC9N9d3qJVmQZ/3FzJ6SfGigCgYIKoZIzj0DAQehRANCAASdX41vxjHdFyTz
+h0E1bJmQtHj7FfTb/J3L0K8eM0NzBgt1769Oua3HkKmSBlkQf1IO2h06d1cGFyC+
+-----END PRIVATE KEY-----`,
+            RedirectURL: "http://localhost:8080/auth/apple/callback",
+        },
+        Security: config.SecurityConfig{
+            RequirePassword:  false, // Allow users without passwords
+            RequireAppleAuth: false, // Apple Sign-In is optional
+        },
+    }
+
+    // Initialize auth service
+    auth, err := goauth.New(cfg)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer auth.Close(context.Background())
+
+    // Generate Apple Sign-In URL
+    state := "random-state-string-for-security"
+    authURL := auth.GetAppleAuthURL(state)
+    fmt.Printf("Apple Sign-In URL: %s\n", authURL)
+
+    // In a real application, redirect user to authURL
+    // Then handle the callback with the authorization code
+}
+```
+
+### Apple Sign-In Callback Handler
+
+```go
+func handleAppleCallback(auth *goauth.Auth, code string) {
+    // Authenticate with Apple Sign-In
+    authResponse, err := auth.AuthenticateWithApple(context.Background(), code)
+    if err != nil {
+        log.Printf("Apple Sign-In failed: %v", err)
+        return
+    }
+
+    fmt.Printf("Apple Sign-In successful: %s\n", authResponse.User.Email)
+    fmt.Printf("Apple ID: %s\n", authResponse.User.AppleID)
+    fmt.Printf("Email Verified: %s\n", authResponse.User.AppleProfile.EmailVerified)
+    fmt.Printf("Real User Status: %d\n", authResponse.User.AppleProfile.RealUserStatus)
+    fmt.Printf("Is Private Email: %s\n", authResponse.User.AppleProfile.IsPrivateEmail)
+    fmt.Printf("First Name: %s\n", authResponse.User.AppleProfile.FirstName)
+    fmt.Printf("Last Name: %s\n", authResponse.User.AppleProfile.LastName)
+}
+```
+
+### Multi-Provider Authentication (Password + Google + TikTok + Apple)
+
+```go
+func main() {
+    // Configuration allowing all authentication methods
+    cfg := &config.Config{
+        // ... other config
+        Security: config.SecurityConfig{
+            RequirePassword:   true,  // Require password authentication
+            RequireGoogleAuth: false, // Google OAuth is optional
+            RequireTikTokAuth: false, // TikTok OAuth is optional
+            RequireAppleAuth:  false, // Apple Sign-In is optional
+        },
+    }
+
+    auth, err := goauth.New(cfg)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Users can authenticate with any combination:
+    // - Email/password only
+    // - Google OAuth only
+    // - TikTok OAuth only
+    // - Apple Sign-In only
+    // - Any combination of the above
+
+    // The library automatically handles:
+    // - User account linking
+    // - Profile data merging
+    // - Authentication method preferences
+    // - Security validation
+}
+```
+
 These examples show the most common usage patterns. For more advanced scenarios, refer to the API documentation.
 
 ## TikTok OAuth Integration
@@ -541,6 +664,7 @@ func main() {
             RequirePassword:   true,  // Require password authentication
             RequireGoogleAuth: false, // Google OAuth is optional
             RequireTikTokAuth: false, // TikTok OAuth is optional
+            RequireAppleAuth:  false, // Apple Sign-In is optional
         },
     }
 

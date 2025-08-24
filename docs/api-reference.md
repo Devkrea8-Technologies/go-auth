@@ -406,6 +406,64 @@ if err != nil {
 }
 ```
 
+## Apple Sign-In Methods
+
+### GetAppleAuthURL
+
+Generates Apple Sign-In authorization URL.
+
+```go
+func (a *Auth) GetAppleAuthURL(state string) string
+```
+
+**Parameters:**
+- `state` - State parameter for CSRF protection
+
+**Returns:**
+- `string` - Apple Sign-In authorization URL (empty if not enabled)
+
+**Example:**
+```go
+state := "random-state-string"
+authURL := auth.GetAppleAuthURL(state)
+if authURL != "" {
+    fmt.Printf("Apple Sign-In URL: %s\n", authURL)
+} else {
+    fmt.Println("Apple Sign-In is not enabled")
+}
+```
+
+### AuthenticateWithApple
+
+Authenticates a user with Apple Sign-In.
+
+```go
+func (a *Auth) AuthenticateWithApple(ctx context.Context, code string) (*types.AuthResponse, error)
+```
+
+**Parameters:**
+- `ctx` - Context for the operation
+- `code` - Authorization code from Apple Sign-In callback
+
+**Returns:**
+- `*types.AuthResponse` - Authentication response with tokens
+- `error` - Error if authentication fails
+
+**Example:**
+```go
+// Handle Apple Sign-In callback
+authResponse, err := auth.AuthenticateWithApple(context.Background(), code)
+if err != nil {
+    log.Printf("Apple Sign-In failed: %v", err)
+} else {
+    fmt.Printf("Apple Sign-In successful: %s\n", authResponse.User.Email)
+    fmt.Printf("Apple ID: %s\n", authResponse.User.AppleID)
+    fmt.Printf("Email Verified: %t\n", authResponse.User.AppleProfile.EmailVerified == "true")
+    fmt.Printf("Real User Status: %d\n", authResponse.User.AppleProfile.RealUserStatus)
+    fmt.Printf("Access token: %s\n", authResponse.AccessToken)
+}
+```
+
 ## Utility Methods
 
 ### Close
@@ -642,6 +700,10 @@ type User struct {
     TikTokID          string             `bson:"tiktok_id,omitempty" json:"tiktok_id,omitempty"`
     TikTokProfile     *TikTokProfile     `bson:"tiktok_profile,omitempty" json:"tiktok_profile,omitempty"`
 
+    // Apple Sign-In support
+    AppleID           string             `bson:"apple_id,omitempty" json:"apple_id,omitempty"`
+    AppleProfile      *AppleProfile      `bson:"apple_profile,omitempty" json:"apple_profile,omitempty"`
+
     // Custom fields support
     CustomFields      map[string]interface{} `bson:"custom_fields,omitempty" json:"custom_fields,omitempty"`
 }
@@ -680,6 +742,20 @@ type TikTokProfile struct {
 }
 ```
 
+### AppleProfile
+
+```go
+type AppleProfile struct {
+    ID             string `json:"id"`
+    Email          string `json:"email"`
+    EmailVerified  string `json:"email_verified"`  // "true" or "false" as string
+    IsPrivateEmail string `json:"is_private_email"` // "true" or "false" as string
+    RealUserStatus int    `json:"real_user_status"` // 0: Unsupported, 1: Unknown, 2: LikelyReal
+    FirstName      string `json:"first_name,omitempty"`
+    LastName       string `json:"last_name,omitempty"`
+}
+```
+
 ### GoogleAuthRequest
 
 ```go
@@ -709,6 +785,23 @@ type TikTokAuthRequest struct {
 
 ```go
 type TikTokAuthResponse struct {
+    AuthURL string `json:"auth_url"`
+    State   string `json:"state"`
+}
+```
+
+### AppleAuthRequest
+
+```go
+type AppleAuthRequest struct {
+    Code string `json:"code" validate:"required"`
+}
+```
+
+### AppleAuthResponse
+
+```go
+type AppleAuthResponse struct {
     AuthURL string `json:"auth_url"`
     State   string `json:"state"`
 }
