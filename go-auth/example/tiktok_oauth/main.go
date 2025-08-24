@@ -46,7 +46,7 @@ func main() {
 	}
 	defer auth.Close(context.Background())
 
-	fmt.Println("=== TikTok OAuth Example ===\n")
+	fmt.Println("=== TikTok OAuth Example ===")
 
 	// Example 1: Generate TikTok OAuth URL
 	fmt.Println("1. Generate TikTok OAuth URL")

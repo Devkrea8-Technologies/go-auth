@@ -35,7 +35,7 @@ func main() {
 	}
 	defer auth.Close(context.Background())
 
-	fmt.Println("=== Custom Fields Example ===\n")
+	fmt.Println("=== Custom Fields Example ===")
 
 	// Example 1: Register user with custom fields
 	fmt.Println("1. Register user with custom fields")

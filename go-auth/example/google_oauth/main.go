@@ -46,7 +46,7 @@ func main() {
 	}
 	defer auth.Close(context.Background())
 
-	fmt.Println("=== Google OAuth Example ===\n")
+	fmt.Println("=== Google OAuth Example ===")
 
 	// Example 1: Generate Google OAuth URL
 	fmt.Println("1. Generate Google OAuth URL")

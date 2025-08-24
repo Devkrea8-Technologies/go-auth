@@ -73,7 +73,7 @@ func main() {
 	}
 	defer auth.Close(context.Background())
 
-	fmt.Println("=== Go Auth Library Example ===\n")
+	fmt.Println("=== Go Auth Library Example ===")
 
 	// Example 1: User Registration
 	fmt.Println("1. User Registration")

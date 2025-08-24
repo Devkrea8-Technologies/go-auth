@@ -42,7 +42,7 @@ func main() {
 	}
 	defer auth.Close(context.Background())
 
-	fmt.Println("=== PostgreSQL Authentication Example ===\n")
+	fmt.Println("=== PostgreSQL Authentication Example ===")
 
 	// Example 1: Register user
 	fmt.Println("1. Register user")
