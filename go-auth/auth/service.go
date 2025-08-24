@@ -6,11 +6,11 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
-	"github.com/go-auth/config"
-	"github.com/go-auth/database"
-	"github.com/go-auth/email"
-	"github.com/go-auth/types"
-	"github.com/go-auth/utils"
+	"github.com/Devkrea8-Technologies/go-auth/config"
+	"github.com/Devkrea8-Technologies/go-auth/database"
+	"github.com/Devkrea8-Technologies/go-auth/email"
+	"github.com/Devkrea8-Technologies/go-auth/types"
+	"github.com/Devkrea8-Technologies/go-auth/utils"
 )
 
 // Service represents the main authentication service

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-auth/auth"
-	"github.com/go-auth/config"
-	"github.com/go-auth/types"
+	"github.com/Devkrea8-Technologies/go-auth/auth"
+	"github.com/Devkrea8-Technologies/go-auth/config"
+	"github.com/Devkrea8-Technologies/go-auth/types"
 )
 
 // Auth represents the main authentication library interface

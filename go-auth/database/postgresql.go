@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-auth/config"
-	"github.com/go-auth/types"
+	"github.com/Devkrea8-Technologies/go-auth/config"
+	"github.com/Devkrea8-Technologies/go-auth/types"
 
 	_ "github.com/lib/pq"
 )

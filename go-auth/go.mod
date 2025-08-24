@@ -1,4 +1,4 @@
-module github.com/go-auth
+module github.com/Devkrea8-Technologies/go-auth
 
 go 1.21
 

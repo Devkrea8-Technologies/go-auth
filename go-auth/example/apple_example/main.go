@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-auth/config"
+	"github.com/Devkrea8-Technologies/go-auth/config"
 )
 
 func main() {

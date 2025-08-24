@@ -8,7 +8,7 @@ import (
 
 	"gopkg.in/gomail.v2"
 
-	"github.com/go-auth/config"
+	"github.com/Devkrea8-Technologies/go-auth/config"
 )
 
 // EmailService handles email operations

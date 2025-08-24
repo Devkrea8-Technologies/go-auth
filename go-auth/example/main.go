@@ -6,9 +6,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/go-auth"
-	"github.com/go-auth/config"
-	"github.com/go-auth/types"
+	goauth "github.com/Devkrea8-Technologies/go-auth"
+	"github.com/Devkrea8-Technologies/go-auth/config"
+	"github.com/Devkrea8-Technologies/go-auth/types"
 )
 
 func main() {
@@ -56,13 +56,13 @@ func main() {
 			},
 		},
 		Security: config.SecurityConfig{
-			PasswordMinLength:         8,
-			PasswordMaxLength:         128,
-			EmailVerificationTTL:      24 * time.Hour,
-			PasswordResetTTL:          1 * time.Hour,
-			MaxLoginAttempts:          5,
-			LockoutDuration:           15 * time.Minute,
-			RequireEmailVerification:  true,
+			PasswordMinLength:        8,
+			PasswordMaxLength:        128,
+			EmailVerificationTTL:     24 * time.Hour,
+			PasswordResetTTL:         1 * time.Hour,
+			MaxLoginAttempts:         5,
+			LockoutDuration:          15 * time.Minute,
+			RequireEmailVerification: true,
 		},
 	}
 
