@@ -152,3 +152,13 @@ func (a *Auth) GetGoogleAuthURL(state string) string {
 func (a *Auth) AuthenticateWithGoogle(ctx context.Context, code string) (*types.AuthResponse, error) {
 	return a.service.AuthenticateWithGoogle(ctx, code)
 }
+
+// GetTikTokAuthURL generates TikTok OAuth authorization URL
+func (a *Auth) GetTikTokAuthURL(state string) string {
+	return a.service.GetTikTokAuthURL(state)
+}
+
+// AuthenticateWithTikTok authenticates a user with TikTok OAuth
+func (a *Auth) AuthenticateWithTikTok(ctx context.Context, code string) (*types.AuthResponse, error) {
+	return a.service.AuthenticateWithTikTok(ctx, code)
+}

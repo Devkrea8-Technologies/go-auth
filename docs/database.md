@@ -123,6 +123,22 @@ The library creates a `users` collection with the following document structure:
     "locale": String
   },
   
+  // TikTok OAuth fields
+  "tiktok_id": String,                // TikTok OAuth ID (unique, optional)
+  "tiktok_profile": {                 // TikTok profile information (optional)
+    "id": String,
+    "username": String,
+    "display_name": String,
+    "profile_picture": String,
+    "bio": String,
+    "follower_count": Number,
+    "following_count": Number,
+    "likes_count": Number,
+    "video_count": Number,
+    "is_verified": Boolean,
+    "is_private": Boolean
+  },
+  
   // Email verification
   "email_verification": {             // Email verification data (optional)
     "token": String,
@@ -159,6 +175,8 @@ CREATE TABLE users (
     last_login_at TIMESTAMP,
     google_id VARCHAR(255) UNIQUE,            -- Google OAuth ID
     google_profile JSONB,                     -- Google profile information
+    tiktok_id VARCHAR(255) UNIQUE,            -- TikTok OAuth ID
+    tiktok_profile JSONB,                     -- TikTok profile information
     custom_fields JSONB                       -- Flexible custom data
 );
 ```
@@ -208,6 +226,15 @@ The library automatically creates the following indexes for optimal performance:
 ```
 - **Purpose**: Ensures Google ID uniqueness and fast Google OAuth lookups
 - **Options**: Unique constraint, sparse index (only for documents with google_id)
+
+#### TikTok ID Index (Unique, Sparse)
+```javascript
+{
+    "tiktok_id": 1
+}
+```
+- **Purpose**: Ensures TikTok ID uniqueness and fast TikTok OAuth lookups
+- **Options**: Unique constraint, sparse index (only for documents with tiktok_id)
 
 ### Email Verification Token Index
 ```javascript
@@ -313,6 +340,12 @@ CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_google_id ON users(google_id);
 ```
 - **Purpose**: Ensures Google ID uniqueness and fast Google OAuth lookups
+
+#### TikTok ID Index (Unique)
+```sql
+CREATE INDEX idx_users_tiktok_id ON users(tiktok_id);
+```
+- **Purpose**: Ensures TikTok ID uniqueness and fast TikTok OAuth lookups
 
 #### Email Verification Token Index
 ```sql

@@ -1,15 +1,16 @@
 # Go Auth Library
 
-A comprehensive authentication library for Go applications with MongoDB and PostgreSQL support, email verification, password reset functionality, and Google OAuth integration.
+A comprehensive authentication library for Go applications with MongoDB and PostgreSQL support, email verification, password reset functionality, and multiple OAuth integrations.
 
 ## Features
 
-- **Flexible Authentication**: Email/password and Google OAuth authentication
+- **Flexible Authentication**: Email/password, Google OAuth, and TikTok OAuth authentication
 - **Multiple Database Support**: MongoDB and PostgreSQL with automatic schema management
 - **User Registration & Login**: Secure user registration and authentication
 - **Email Verification**: Email verification with customizable templates
 - **Password Reset**: Secure password reset functionality
 - **Google OAuth**: Complete OAuth 2.0 integration with Google
+- **TikTok OAuth**: Complete OAuth 2.0 integration with TikTok
 - **JWT Tokens**: Access and refresh token management
 - **Custom Fields**: Extensible user data with custom fields
 - **Configurable**: Highly configurable security settings and email templates
@@ -74,9 +75,16 @@ func main() {
             ClientSecret: "your-google-client-secret",
             RedirectURL:  "http://localhost:8080/auth/google/callback",
         },
+        TikTok: config.TikTokConfig{
+            Enabled:      true,
+            ClientID:     "your-tiktok-client-key",
+            ClientSecret: "your-tiktok-client-secret",
+            RedirectURL:  "http://localhost:8080/auth/tiktok/callback",
+        },
         Security: config.SecurityConfig{
             RequirePassword:   true,  // Require password authentication
             RequireGoogleAuth: false, // Google OAuth is optional
+            RequireTikTokAuth: false, // TikTok OAuth is optional
         },
     }
 
@@ -109,6 +117,10 @@ func main() {
     // Google OAuth authentication
     authURL := auth.GetGoogleAuthURL("state-string")
     log.Printf("Google OAuth URL: %s", authURL)
+
+    // TikTok OAuth authentication
+    tiktokAuthURL := auth.GetTikTokAuthURL("state-string")
+    log.Printf("TikTok OAuth URL: %s", tiktokAuthURL)
 }
 ```
 

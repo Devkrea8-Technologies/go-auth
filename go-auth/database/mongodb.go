@@ -67,6 +67,12 @@ func createIndexes(ctx context.Context, collection *mongo.Collection) error {
 		Options: options.Index().SetUnique(true).SetSparse(true),
 	}
 
+	// TikTok ID index (unique, sparse)
+	tiktokIDIndex := mongo.IndexModel{
+		Keys:    bson.D{{Key: "tiktok_id", Value: 1}},
+		Options: options.Index().SetUnique(true).SetSparse(true),
+	}
+
 	// Email verification token index
 	emailTokenIndex := mongo.IndexModel{
 		Keys:    bson.D{{Key: "email_verification.token", Value: 1}},
@@ -87,6 +93,7 @@ func createIndexes(ctx context.Context, collection *mongo.Collection) error {
 	_, err := collection.Indexes().CreateMany(ctx, []mongo.IndexModel{
 		emailIndex,
 		googleIDIndex,
+		tiktokIDIndex,
 		emailTokenIndex,
 		passwordTokenIndex,
 		createdAtIndex,

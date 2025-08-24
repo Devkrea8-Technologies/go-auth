@@ -20,6 +20,7 @@ type Service struct {
 	jwtManager    *JWTManager
 	emailService  *email.EmailService
 	googleService *GoogleService
+	tiktokService *TikTokService
 }
 
 // NewService creates a new authentication service
@@ -50,12 +51,16 @@ func NewService(cfg *config.Config) (*Service, error) {
 	// Initialize Google OAuth service
 	googleService := NewGoogleService(cfg)
 
+	// Initialize TikTok OAuth service
+	tiktokService := NewTikTokService(cfg)
+
 	return &Service{
 		config:        cfg,
 		db:            db,
 		jwtManager:    jwtManager,
 		emailService:  emailService,
 		googleService: googleService,
+		tiktokService: tiktokService,
 	}, nil
 }
 
@@ -423,6 +428,72 @@ func (s *Service) AuthenticateWithGoogle(ctx context.Context, code string) (*typ
 	} else {
 		// Create new user
 		user = googleUser
+		if err := s.db.CreateUser(ctx, user); err != nil {
+			return nil, fmt.Errorf("failed to create user: %w", err)
+		}
+	}
+
+	// Update last login
+	if err := s.db.UpdateLastLogin(ctx, user.ID); err != nil {
+		return nil, fmt.Errorf("failed to update last login: %w", err)
+	}
+
+	// Generate tokens
+	accessToken, err := s.jwtManager.GenerateAccessToken(user)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate access token: %w", err)
+	}
+
+	refreshToken, err := s.jwtManager.GenerateRefreshToken(user)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
+	}
+
+	return &types.AuthResponse{
+		User:         user,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresIn:    int64(s.config.JWT.AccessTokenTTL.Seconds()),
+	}, nil
+}
+
+// GetTikTokAuthURL generates TikTok OAuth authorization URL
+func (s *Service) GetTikTokAuthURL(state string) string {
+	return s.tiktokService.GetAuthURL(state)
+}
+
+// AuthenticateWithTikTok authenticates a user with TikTok OAuth
+func (s *Service) AuthenticateWithTikTok(ctx context.Context, code string) (*types.AuthResponse, error) {
+	// Authenticate with TikTok
+	tiktokUser, err := s.tiktokService.AuthenticateWithTikTok(ctx, code)
+	if err != nil {
+		return nil, fmt.Errorf("failed to authenticate with TikTok: %w", err)
+	}
+
+	// Check if user exists by username (TikTok username)
+	// Since TikTok doesn't provide email, we'll use username as identifier
+	existingUser, err := s.db.GetUserByEmail(ctx, tiktokUser.TikTokProfile.Username+"@tiktok.com")
+	if err != nil {
+		return nil, fmt.Errorf("failed to check existing user: %w", err)
+	}
+
+	var user *types.User
+	if existingUser != nil {
+		// User exists, update TikTok information
+		existingUser.TikTokID = tiktokUser.TikTokID
+		existingUser.TikTokProfile = tiktokUser.TikTokProfile
+		existingUser.FirstName = tiktokUser.FirstName
+		existingUser.LastName = tiktokUser.LastName
+
+		if err := s.db.UpdateUser(ctx, existingUser); err != nil {
+			return nil, fmt.Errorf("failed to update user: %w", err)
+		}
+		user = existingUser
+	} else {
+		// Create new user
+		user = tiktokUser
+		// Set a placeholder email using TikTok username
+		user.Email = tiktokUser.TikTokProfile.Username + "@tiktok.com"
 		if err := s.db.CreateUser(ctx, user); err != nil {
 			return nil, fmt.Errorf("failed to create user: %w", err)
 		}

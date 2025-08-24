@@ -28,8 +28,12 @@ type User struct {
 	IsActive          bool               `bson:"is_active" json:"is_active"`
 
 	// Google OAuth support
-	GoogleID          string             `bson:"google_id,omitempty" json:"google_id,omitempty"`
-	GoogleProfile     *GoogleProfile     `bson:"google_profile,omitempty" json:"google_profile,omitempty"`
+	GoogleID      string         `bson:"google_id,omitempty" json:"google_id,omitempty"`
+	GoogleProfile *GoogleProfile `bson:"google_profile,omitempty" json:"google_profile,omitempty"`
+
+	// TikTok OAuth support
+	TikTokID      string         `bson:"tiktok_id,omitempty" json:"tiktok_id,omitempty"`
+	TikTokProfile *TikTokProfile `bson:"tiktok_profile,omitempty" json:"tiktok_profile,omitempty"`
 
 	// Custom fields support
 	CustomFields map[string]interface{} `bson:"custom_fields,omitempty" json:"custom_fields,omitempty"`
@@ -151,6 +155,17 @@ type GoogleAuthResponse struct {
 	State   string `json:"state"`
 }
 
+// TikTokAuthRequest represents TikTok OAuth authentication request
+type TikTokAuthRequest struct {
+	Code string `json:"code" validate:"required"`
+}
+
+// TikTokAuthResponse represents TikTok OAuth authentication response
+type TikTokAuthResponse struct {
+	AuthURL string `json:"auth_url"`
+	State   string `json:"state"`
+}
+
 // AuthResponse represents authentication response
 type AuthResponse struct {
 	User         *User  `json:"user"`
@@ -171,6 +186,21 @@ type GoogleProfile struct {
 	Locale        string `json:"locale"`
 }
 
+// TikTokProfile represents TikTok OAuth profile information
+type TikTokProfile struct {
+	ID             string `json:"id"`
+	Username       string `json:"username"`
+	DisplayName    string `json:"display_name"`
+	ProfilePicture string `json:"profile_picture"`
+	Bio            string `json:"bio"`
+	FollowerCount  int    `json:"follower_count"`
+	FollowingCount int    `json:"following_count"`
+	LikesCount     int    `json:"likes_count"`
+	VideoCount     int    `json:"video_count"`
+	IsVerified     bool   `json:"is_verified"`
+	IsPrivate      bool   `json:"is_private"`
+}
+
 // UserResponse represents user response (without sensitive data)
 type UserResponse struct {
 	ID              interface{} `json:"id"`
@@ -186,6 +216,10 @@ type UserResponse struct {
 	// Google OAuth support
 	GoogleID      string         `json:"google_id,omitempty"`
 	GoogleProfile *GoogleProfile `json:"google_profile,omitempty"`
+
+	// TikTok OAuth support
+	TikTokID      string         `json:"tiktok_id,omitempty"`
+	TikTokProfile *TikTokProfile `json:"tiktok_profile,omitempty"`
 
 	// Custom fields support
 	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`

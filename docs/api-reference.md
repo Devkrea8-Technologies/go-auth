@@ -345,6 +345,63 @@ if err != nil {
 } else {
     fmt.Printf("Google authentication successful: %s\n", authResponse.User.Email)
     fmt.Printf("Google ID: %s\n", authResponse.User.GoogleID)
+    	fmt.Printf("Access token: %s\n", authResponse.AccessToken)
+}
+```
+
+## TikTok OAuth Methods
+
+### GetTikTokAuthURL
+
+Generates TikTok OAuth authorization URL.
+
+```go
+func (a *Auth) GetTikTokAuthURL(state string) string
+```
+
+**Parameters:**
+- `state` - State parameter for CSRF protection
+
+**Returns:**
+- `string` - TikTok OAuth authorization URL (empty if not enabled)
+
+**Example:**
+```go
+state := "random-state-string"
+authURL := auth.GetTikTokAuthURL(state)
+if authURL != "" {
+    fmt.Printf("TikTok OAuth URL: %s\n", authURL)
+} else {
+    fmt.Println("TikTok OAuth is not enabled")
+}
+```
+
+### AuthenticateWithTikTok
+
+Authenticates a user with TikTok OAuth.
+
+```go
+func (a *Auth) AuthenticateWithTikTok(ctx context.Context, code string) (*types.AuthResponse, error)
+```
+
+**Parameters:**
+- `ctx` - Context for the operation
+- `code` - Authorization code from TikTok OAuth callback
+
+**Returns:**
+- `*types.AuthResponse` - Authentication response with tokens
+- `error` - Error if authentication fails
+
+**Example:**
+```go
+// Handle TikTok OAuth callback
+authResponse, err := auth.AuthenticateWithTikTok(context.Background(), code)
+if err != nil {
+    log.Printf("TikTok authentication failed: %v", err)
+} else {
+    fmt.Printf("TikTok authentication successful: %s\n", authResponse.User.Email)
+    fmt.Printf("TikTok ID: %s\n", authResponse.User.TikTokID)
+    fmt.Printf("Username: %s\n", authResponse.User.TikTokProfile.Username)
     fmt.Printf("Access token: %s\n", authResponse.AccessToken)
 }
 ```
@@ -581,6 +638,10 @@ type User struct {
     GoogleID          string             `bson:"google_id,omitempty" json:"google_id,omitempty"`
     GoogleProfile     *GoogleProfile     `bson:"google_profile,omitempty" json:"google_profile,omitempty"`
 
+    // TikTok OAuth support
+    TikTokID          string             `bson:"tiktok_id,omitempty" json:"tiktok_id,omitempty"`
+    TikTokProfile     *TikTokProfile     `bson:"tiktok_profile,omitempty" json:"tiktok_profile,omitempty"`
+
     // Custom fields support
     CustomFields      map[string]interface{} `bson:"custom_fields,omitempty" json:"custom_fields,omitempty"`
 }
@@ -601,6 +662,24 @@ type GoogleProfile struct {
 }
 ```
 
+### TikTokProfile
+
+```go
+type TikTokProfile struct {
+    ID             string `json:"id"`
+    Username       string `json:"username"`
+    DisplayName    string `json:"display_name"`
+    ProfilePicture string `json:"profile_picture"`
+    Bio            string `json:"bio"`
+    FollowerCount  int    `json:"follower_count"`
+    FollowingCount int    `json:"following_count"`
+    LikesCount     int    `json:"likes_count"`
+    VideoCount     int    `json:"video_count"`
+    IsVerified     bool   `json:"is_verified"`
+    IsPrivate      bool   `json:"is_private"`
+}
+```
+
 ### GoogleAuthRequest
 
 ```go
@@ -613,6 +692,23 @@ type GoogleAuthRequest struct {
 
 ```go
 type GoogleAuthResponse struct {
+    AuthURL string `json:"auth_url"`
+    State   string `json:"state"`
+}
+```
+
+### TikTokAuthRequest
+
+```go
+type TikTokAuthRequest struct {
+    Code string `json:"code" validate:"required"`
+}
+```
+
+### TikTokAuthResponse
+
+```go
+type TikTokAuthResponse struct {
     AuthURL string `json:"auth_url"`
     State   string `json:"state"`
 }

@@ -13,6 +13,7 @@ type Config struct {
     Email    EmailConfig    `json:"email"`
     Security SecurityConfig `json:"security"`
     Google   GoogleConfig   `json:"google"`
+    TikTok   TikTokConfig   `json:"tiktok"`
 }
 ```
 
@@ -244,6 +245,47 @@ Google: config.GoogleConfig{
 },
 ```
 
+## TikTok OAuth Configuration
+
+TikTok OAuth 2.0 settings for social authentication:
+
+```go
+type TikTokConfig struct {
+    ClientID     string `json:"client_id"`
+    ClientSecret string `json:"client_secret"`
+    RedirectURL  string `json:"redirect_url"`
+    Enabled      bool   `json:"enabled" default:"false"`
+}
+```
+
+### Options
+
+- **ClientID**: TikTok OAuth client key (required if enabled)
+  - Get this from TikTok for Developers
+  - Example: `"your-tiktok-client-key"`
+
+- **ClientSecret**: TikTok OAuth client secret (required if enabled)
+  - Get this from TikTok for Developers
+  - Keep this secret and secure
+
+- **RedirectURL**: OAuth callback URL (required if enabled)
+  - Must match the URL configured in TikTok for Developers
+  - Example: `"http://localhost:8080/auth/tiktok/callback"`
+
+- **Enabled**: Enable TikTok OAuth (default: false)
+  - Set to `true` to enable TikTok authentication
+
+### Example
+
+```go
+TikTok: config.TikTokConfig{
+    Enabled:      true,
+    ClientID:     "your-tiktok-client-key",
+    ClientSecret: "your-tiktok-client-secret",
+    RedirectURL:  "http://localhost:8080/auth/tiktok/callback",
+},
+```
+
 ## Security Configuration
 
 Security settings and policies:
@@ -259,6 +301,7 @@ type SecurityConfig struct {
     RequireEmailVerification bool       `json:"require_email_verification" default:"true"`
     RequirePassword       bool          `json:"require_password" default:"true"`
     RequireGoogleAuth     bool          `json:"require_google_auth" default:"false"`
+    RequireTikTokAuth     bool          `json:"require_tiktok_auth" default:"false"`
 }
 ```
 

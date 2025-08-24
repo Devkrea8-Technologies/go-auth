@@ -76,6 +76,8 @@ func (p *PostgreSQL) createTables() error {
 			last_login_at TIMESTAMP,
 			google_id VARCHAR(255) UNIQUE,
 			google_profile JSONB,
+			tiktok_id VARCHAR(255) UNIQUE,
+			tiktok_profile JSONB,
 			custom_fields JSONB
 		);
 	`
@@ -121,6 +123,7 @@ func (p *PostgreSQL) createTables() error {
 	indexes := []string{
 		"CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);",
 		"CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);",
+		"CREATE INDEX IF NOT EXISTS idx_users_tiktok_id ON users(tiktok_id);",
 		"CREATE INDEX IF NOT EXISTS idx_email_verifications_token ON email_verifications(token);",
 		"CREATE INDEX IF NOT EXISTS idx_email_verifications_user_id ON email_verifications(user_id);",
 		"CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token);",
@@ -140,8 +143,8 @@ func (p *PostgreSQL) createTables() error {
 // CreateUser creates a new user in the database
 func (p *PostgreSQL) CreateUser(ctx context.Context, user *types.User) error {
 	query := `
-		INSERT INTO users (email, password, first_name, last_name, is_email_verified, is_active, google_id, google_profile, custom_fields)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO users (email, password, first_name, last_name, is_email_verified, is_active, google_id, google_profile, tiktok_id, tiktok_profile, custom_fields)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		RETURNING id, created_at, updated_at
 	`
 
@@ -156,6 +159,8 @@ func (p *PostgreSQL) CreateUser(ctx context.Context, user *types.User) error {
 		user.IsActive,
 		user.GoogleID,
 		user.GoogleProfile,
+		user.TikTokID,
+		user.TikTokProfile,
 		user.CustomFields,
 	).Scan(&id, &createdAt, &updatedAt)
 
@@ -182,7 +187,7 @@ func (p *PostgreSQL) CreateUser(ctx context.Context, user *types.User) error {
 func (p *PostgreSQL) GetUserByEmail(ctx context.Context, email string) (*types.User, error) {
 	query := `
 		SELECT id, email, password, first_name, last_name, is_email_verified, is_active, 
-		       created_at, updated_at, last_login_at, google_id, google_profile, custom_fields
+		       created_at, updated_at, last_login_at, google_id, google_profile, tiktok_id, tiktok_profile, custom_fields
 		FROM users 
 		WHERE email = $1
 	`
@@ -202,6 +207,8 @@ func (p *PostgreSQL) GetUserByEmail(ctx context.Context, email string) (*types.U
 		&lastLoginAt,
 		&user.GoogleID,
 		&user.GoogleProfile,
+		&user.TikTokID,
+		&user.TikTokProfile,
 		&user.CustomFields,
 	)
 
@@ -246,7 +253,7 @@ func (p *PostgreSQL) GetUserByID(ctx context.Context, userID interface{}) (*type
 	}
 	query := `
 		SELECT id, email, password, first_name, last_name, is_email_verified, is_active, 
-		       created_at, updated_at, last_login_at, google_id, google_profile, custom_fields
+		       created_at, updated_at, last_login_at, google_id, google_profile, tiktok_id, tiktok_profile, custom_fields
 		FROM users 
 		WHERE id = $1
 	`
@@ -266,6 +273,8 @@ func (p *PostgreSQL) GetUserByID(ctx context.Context, userID interface{}) (*type
 		&lastLoginAt,
 		&user.GoogleID,
 		&user.GoogleProfile,
+		&user.TikTokID,
+		&user.TikTokProfile,
 		&user.CustomFields,
 	)
 
@@ -410,8 +419,8 @@ func (p *PostgreSQL) UpdateUser(ctx context.Context, user *types.User) error {
 		UPDATE users 
 		SET email = $1, password = $2, first_name = $3, last_name = $4, 
 		    is_email_verified = $5, is_active = $6, updated_at = CURRENT_TIMESTAMP,
-		    last_login_at = $7, google_id = $8, google_profile = $9, custom_fields = $10
-		WHERE id = $11
+		    last_login_at = $7, google_id = $8, google_profile = $9, tiktok_id = $10, tiktok_profile = $11, custom_fields = $12
+		WHERE id = $13
 	`
 
 	_, err := p.db.ExecContext(ctx, query,
@@ -424,6 +433,8 @@ func (p *PostgreSQL) UpdateUser(ctx context.Context, user *types.User) error {
 		user.LastLoginAt,
 		user.GoogleID,
 		user.GoogleProfile,
+		user.TikTokID,
+		user.TikTokProfile,
 		user.CustomFields,
 		user.ID,
 	)
