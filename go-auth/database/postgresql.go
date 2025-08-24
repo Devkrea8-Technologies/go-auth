@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lib/pq"
+
 	"github.com/Devkrea8-Technologies/go-auth/config"
 	"github.com/Devkrea8-Technologies/go-auth/types"
 
@@ -74,12 +76,15 @@ func (p *PostgreSQL) createTables() error {
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			last_login_at TIMESTAMP,
-					google_id VARCHAR(255) UNIQUE,
-		google_profile JSONB,
-		tiktok_id VARCHAR(255) UNIQUE,
-		tiktok_profile JSONB,
-		apple_id VARCHAR(255) UNIQUE,
-		apple_profile JSONB,
+			google_id VARCHAR(255) UNIQUE,
+			google_profile JSONB,
+			tiktok_id VARCHAR(255) UNIQUE,
+			tiktok_profile JSONB,
+			apple_id VARCHAR(255) UNIQUE,
+			apple_profile JSONB,
+			two_factor_enabled BOOLEAN DEFAULT FALSE,
+			two_factor_secret VARCHAR(255),
+			two_factor_backup_codes TEXT[],
 			custom_fields JSONB
 		);
 	`
@@ -146,8 +151,8 @@ func (p *PostgreSQL) createTables() error {
 // CreateUser creates a new user in the database
 func (p *PostgreSQL) CreateUser(ctx context.Context, user *types.User) error {
 	query := `
-		INSERT INTO users (email, password, first_name, last_name, is_email_verified, is_active, google_id, google_profile, tiktok_id, tiktok_profile, apple_id, apple_profile, custom_fields)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		INSERT INTO users (email, password, first_name, last_name, is_email_verified, is_active, google_id, google_profile, tiktok_id, tiktok_profile, apple_id, apple_profile, two_factor_enabled, two_factor_secret, two_factor_backup_codes, custom_fields)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 		RETURNING id, created_at, updated_at
 	`
 
@@ -166,6 +171,9 @@ func (p *PostgreSQL) CreateUser(ctx context.Context, user *types.User) error {
 		user.TikTokProfile,
 		user.AppleID,
 		user.AppleProfile,
+		user.TwoFactorEnabled,
+		user.TwoFactorSecret,
+		pq.Array(user.TwoFactorBackupCodes),
 		user.CustomFields,
 	).Scan(&id, &createdAt, &updatedAt)
 
@@ -192,7 +200,7 @@ func (p *PostgreSQL) CreateUser(ctx context.Context, user *types.User) error {
 func (p *PostgreSQL) GetUserByEmail(ctx context.Context, email string) (*types.User, error) {
 	query := `
 		SELECT id, email, password, first_name, last_name, is_email_verified, is_active, 
-		       created_at, updated_at, last_login_at, google_id, google_profile, tiktok_id, tiktok_profile, apple_id, apple_profile, custom_fields
+		       created_at, updated_at, last_login_at, google_id, google_profile, tiktok_id, tiktok_profile, apple_id, apple_profile, two_factor_enabled, two_factor_secret, two_factor_backup_codes, custom_fields
 		FROM users 
 		WHERE email = $1
 	`
@@ -216,6 +224,9 @@ func (p *PostgreSQL) GetUserByEmail(ctx context.Context, email string) (*types.U
 		&user.TikTokProfile,
 		&user.AppleID,
 		&user.AppleProfile,
+		&user.TwoFactorEnabled,
+		&user.TwoFactorSecret,
+		pq.Array(&user.TwoFactorBackupCodes),
 		&user.CustomFields,
 	)
 
@@ -260,7 +271,7 @@ func (p *PostgreSQL) GetUserByID(ctx context.Context, userID interface{}) (*type
 	}
 	query := `
 		SELECT id, email, password, first_name, last_name, is_email_verified, is_active, 
-		       created_at, updated_at, last_login_at, google_id, google_profile, tiktok_id, tiktok_profile, apple_id, apple_profile, custom_fields
+		       created_at, updated_at, last_login_at, google_id, google_profile, tiktok_id, tiktok_profile, apple_id, apple_profile, two_factor_enabled, two_factor_secret, two_factor_backup_codes, custom_fields
 		FROM users 
 		WHERE id = $1
 	`
@@ -284,6 +295,9 @@ func (p *PostgreSQL) GetUserByID(ctx context.Context, userID interface{}) (*type
 		&user.TikTokProfile,
 		&user.AppleID,
 		&user.AppleProfile,
+		&user.TwoFactorEnabled,
+		&user.TwoFactorSecret,
+		pq.Array(&user.TwoFactorBackupCodes),
 		&user.CustomFields,
 	)
 
@@ -428,8 +442,8 @@ func (p *PostgreSQL) UpdateUser(ctx context.Context, user *types.User) error {
 		UPDATE users 
 		SET email = $1, password = $2, first_name = $3, last_name = $4, 
 		    is_email_verified = $5, is_active = $6, updated_at = CURRENT_TIMESTAMP,
-		    last_login_at = $7, google_id = $8, google_profile = $9, tiktok_id = $10, tiktok_profile = $11, apple_id = $12, apple_profile = $13, custom_fields = $14
-		WHERE id = $15
+		    last_login_at = $7, google_id = $8, google_profile = $9, tiktok_id = $10, tiktok_profile = $11, apple_id = $12, apple_profile = $13, two_factor_enabled = $14, two_factor_secret = $15, two_factor_backup_codes = $16, custom_fields = $17
+		WHERE id = $18
 	`
 
 	_, err := p.db.ExecContext(ctx, query,
@@ -446,6 +460,9 @@ func (p *PostgreSQL) UpdateUser(ctx context.Context, user *types.User) error {
 		user.TikTokProfile,
 		user.AppleID,
 		user.AppleProfile,
+		user.TwoFactorEnabled,
+		user.TwoFactorSecret,
+		pq.Array(user.TwoFactorBackupCodes),
 		user.CustomFields,
 		user.ID,
 	)

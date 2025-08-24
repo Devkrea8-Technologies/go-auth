@@ -22,6 +22,7 @@ type Service struct {
 	googleService *GoogleService
 	tiktokService *TikTokService
 	appleService  *AppleService
+	twoFactorService *TwoFactorService
 }
 
 // NewService creates a new authentication service
@@ -58,6 +59,9 @@ func NewService(cfg *config.Config) (*Service, error) {
 	// Initialize Apple Sign-In service
 	appleService := NewAppleService(cfg)
 
+	// Initialize 2FA service
+	twoFactorService := NewTwoFactorService(cfg)
+
 	return &Service{
 		config:        cfg,
 		db:            db,
@@ -66,6 +70,7 @@ func NewService(cfg *config.Config) (*Service, error) {
 		googleService: googleService,
 		tiktokService: tiktokService,
 		appleService:  appleService,
+		twoFactorService: twoFactorService,
 	}, nil
 }
 
@@ -598,4 +603,136 @@ func (s *Service) AuthenticateWithApple(ctx context.Context, code string) (*type
 		RefreshToken: refreshToken,
 		ExpiresIn:    int64(s.config.JWT.AccessTokenTTL.Seconds()),
 	}, nil
+}
+
+// Setup2FA sets up 2FA for a user
+func (s *Service) Setup2FA(ctx context.Context, req *types.TwoFactorSetupRequest) (*types.TwoFactorSetupResponse, error) {
+	if !s.config.Security.Enable2FA {
+		return nil, fmt.Errorf("2FA is not enabled in configuration")
+	}
+
+	// Get user
+	user, err := s.db.GetUserByID(ctx, req.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+	if user == nil {
+		return nil, fmt.Errorf("user not found")
+	}
+
+	// Check if 2FA is already enabled
+	if user.TwoFactorEnabled {
+		return nil, fmt.Errorf("2FA is already enabled for this user")
+	}
+
+	// Setup 2FA
+	issuer := s.config.JWT.Issuer
+	if issuer == "" {
+		issuer = "GoAuth"
+	}
+
+	return s.twoFactorService.Setup2FA(user, issuer)
+}
+
+// Enable2FA enables 2FA for a user
+func (s *Service) Enable2FA(ctx context.Context, req *types.TwoFactorVerifyRequest) error {
+	if !s.config.Security.Enable2FA {
+		return fmt.Errorf("2FA is not enabled in configuration")
+	}
+
+	// Get user
+	user, err := s.db.GetUserByID(ctx, req.UserID)
+	if err != nil {
+		return fmt.Errorf("failed to get user: %w", err)
+	}
+	if user == nil {
+		return fmt.Errorf("user not found")
+	}
+
+	// Verify the code matches the setup
+	setupResponse, err := s.twoFactorService.Setup2FA(user, s.config.JWT.Issuer)
+	if err != nil {
+		return fmt.Errorf("failed to setup 2FA: %w", err)
+	}
+
+	// Verify the provided code
+	if !s.twoFactorService.ValidateTOTP(setupResponse.Secret, req.Code) {
+		return fmt.Errorf("invalid 2FA code")
+	}
+
+	// Enable 2FA
+	s.twoFactorService.Enable2FA(user, setupResponse.Secret, setupResponse.BackupCodes)
+
+	// Update user in database
+	if err := s.db.UpdateUser(ctx, user); err != nil {
+		return fmt.Errorf("failed to update user: %w", err)
+	}
+
+	return nil
+}
+
+// Disable2FA disables 2FA for a user
+func (s *Service) Disable2FA(ctx context.Context, req *types.TwoFactorDisableRequest) error {
+	if !s.config.Security.Enable2FA {
+		return fmt.Errorf("2FA is not enabled in configuration")
+	}
+
+	// Get user
+	user, err := s.db.GetUserByID(ctx, req.UserID)
+	if err != nil {
+		return fmt.Errorf("failed to get user: %w", err)
+	}
+	if user == nil {
+		return fmt.Errorf("user not found")
+	}
+
+	// Verify 2FA code
+	isValid, err := s.twoFactorService.Verify2FA(user, req.Code)
+	if err != nil {
+		return fmt.Errorf("failed to verify 2FA code: %w", err)
+	}
+	if !isValid {
+		return fmt.Errorf("invalid 2FA code")
+	}
+
+	// Disable 2FA
+	s.twoFactorService.Disable2FA(user)
+
+	// Update user in database
+	if err := s.db.UpdateUser(ctx, user); err != nil {
+		return fmt.Errorf("failed to update user: %w", err)
+	}
+
+	return nil
+}
+
+// Verify2FA verifies a 2FA code
+func (s *Service) Verify2FA(ctx context.Context, req *types.TwoFactorVerifyRequest) (bool, error) {
+	if !s.config.Security.Enable2FA {
+		return false, fmt.Errorf("2FA is not enabled in configuration")
+	}
+
+	// Get user
+	user, err := s.db.GetUserByID(ctx, req.UserID)
+	if err != nil {
+		return false, fmt.Errorf("failed to get user: %w", err)
+	}
+	if user == nil {
+		return false, fmt.Errorf("user not found")
+	}
+
+	// Verify 2FA code
+	isValid, err := s.twoFactorService.Verify2FA(user, req.Code)
+	if err != nil {
+		return false, fmt.Errorf("failed to verify 2FA code: %w", err)
+	}
+
+	// Update user in database if backup code was used
+	if isValid {
+		if err := s.db.UpdateUser(ctx, user); err != nil {
+			return false, fmt.Errorf("failed to update user: %w", err)
+		}
+	}
+
+	return isValid, nil
 }

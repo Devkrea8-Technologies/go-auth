@@ -39,6 +39,11 @@ type User struct {
 	AppleID      string        `bson:"apple_id,omitempty" json:"apple_id,omitempty"`
 	AppleProfile *AppleProfile `bson:"apple_profile,omitempty" json:"apple_profile,omitempty"`
 
+	// 2FA support
+	TwoFactorEnabled   bool     `bson:"two_factor_enabled" json:"two_factor_enabled"`
+	TwoFactorSecret    string   `bson:"two_factor_secret,omitempty" json:"two_factor_secret,omitempty"`
+	TwoFactorBackupCodes []string `bson:"two_factor_backup_codes,omitempty" json:"two_factor_backup_codes,omitempty"`
+
 	// Custom fields support
 	CustomFields map[string]interface{} `bson:"custom_fields,omitempty" json:"custom_fields,omitempty"`
 }
@@ -251,6 +256,10 @@ type UserResponse struct {
 	AppleID      string        `json:"apple_id,omitempty"`
 	AppleProfile *AppleProfile `json:"apple_profile,omitempty"`
 
+	// 2FA support
+	TwoFactorEnabled   bool     `json:"two_factor_enabled"`
+	TwoFactorBackupCodes []string `json:"two_factor_backup_codes,omitempty"`
+
 	// Custom fields support
 	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
 }
@@ -266,4 +275,34 @@ func (ur *UserResponse) GetCustomFields() map[string]interface{} {
 // SetCustomFields implements CustomFields interface
 func (ur *UserResponse) SetCustomFields(fields map[string]interface{}) {
 	ur.CustomFields = fields
+}
+
+// TwoFactorSetupRequest represents 2FA setup request
+type TwoFactorSetupRequest struct {
+	UserID interface{} `json:"user_id" validate:"required"`
+}
+
+// TwoFactorSetupResponse represents 2FA setup response
+type TwoFactorSetupResponse struct {
+	Secret      string `json:"secret"`       // TOTP secret for QR code generation
+	QRCodeURL   string `json:"qr_code_url"`  // URL for QR code
+	BackupCodes []string `json:"backup_codes"` // Backup codes for account recovery
+}
+
+// TwoFactorVerifyRequest represents 2FA verification request
+type TwoFactorVerifyRequest struct {
+	UserID interface{} `json:"user_id" validate:"required"`
+	Code   string      `json:"code" validate:"required"` // TOTP code or backup code
+}
+
+// TwoFactorDisableRequest represents 2FA disable request
+type TwoFactorDisableRequest struct {
+	UserID interface{} `json:"user_id" validate:"required"`
+	Code   string      `json:"code" validate:"required"` // TOTP code or backup code
+}
+
+// TwoFactorLoginRequest represents 2FA login request
+type TwoFactorLoginRequest struct {
+	UserID interface{} `json:"user_id" validate:"required"`
+	Code   string      `json:"code" validate:"required"` // TOTP code or backup code
 }

@@ -172,3 +172,23 @@ func (a *Auth) GetAppleAuthURL(state string) string {
 func (a *Auth) AuthenticateWithApple(ctx context.Context, code string) (*types.AuthResponse, error) {
 	return a.service.AuthenticateWithApple(ctx, code)
 }
+
+// Setup2FA sets up 2FA for a user
+func (a *Auth) Setup2FA(ctx context.Context, req *types.TwoFactorSetupRequest) (*types.TwoFactorSetupResponse, error) {
+	return a.service.Setup2FA(ctx, req)
+}
+
+// Enable2FA enables 2FA for a user
+func (a *Auth) Enable2FA(ctx context.Context, req *types.TwoFactorVerifyRequest) error {
+	return a.service.Enable2FA(ctx, req)
+}
+
+// Disable2FA disables 2FA for a user
+func (a *Auth) Disable2FA(ctx context.Context, req *types.TwoFactorDisableRequest) error {
+	return a.service.Disable2FA(ctx, req)
+}
+
+// Verify2FA verifies a 2FA code
+func (a *Auth) Verify2FA(ctx context.Context, req *types.TwoFactorVerifyRequest) (bool, error) {
+	return a.service.Verify2FA(ctx, req)
+}

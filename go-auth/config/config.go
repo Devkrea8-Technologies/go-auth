@@ -111,6 +111,8 @@ type SecurityConfig struct {
 	RequireGoogleAuth        bool          `json:"require_google_auth" default:"false"`
 	RequireTikTokAuth        bool          `json:"require_tiktok_auth" default:"false"`
 	RequireAppleAuth         bool          `json:"require_apple_auth" default:"false"`
+	Enable2FA                bool          `json:"enable_2fa" default:"false"`
+	Require2FA               bool          `json:"require_2fa" default:"false"`
 }
 
 // DefaultConfig returns a default configuration
@@ -141,6 +143,8 @@ func DefaultConfig() *Config {
 			RequireGoogleAuth:        false,
 			RequireTikTokAuth:        false,
 			RequireAppleAuth:         false,
+			Enable2FA:                false,
+			Require2FA:               false,
 		},
 		Google: GoogleConfig{
 			Enabled: false,
