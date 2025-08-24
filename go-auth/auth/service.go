@@ -21,6 +21,7 @@ type Service struct {
 	emailService  *email.EmailService
 	googleService *GoogleService
 	tiktokService *TikTokService
+	appleService  *AppleService
 }
 
 // NewService creates a new authentication service
@@ -54,6 +55,9 @@ func NewService(cfg *config.Config) (*Service, error) {
 	// Initialize TikTok OAuth service
 	tiktokService := NewTikTokService(cfg)
 
+	// Initialize Apple Sign-In service
+	appleService := NewAppleService(cfg)
+
 	return &Service{
 		config:        cfg,
 		db:            db,
@@ -61,6 +65,7 @@ func NewService(cfg *config.Config) (*Service, error) {
 		emailService:  emailService,
 		googleService: googleService,
 		tiktokService: tiktokService,
+		appleService:  appleService,
 	}, nil
 }
 
@@ -494,6 +499,78 @@ func (s *Service) AuthenticateWithTikTok(ctx context.Context, code string) (*typ
 		user = tiktokUser
 		// Set a placeholder email using TikTok username
 		user.Email = tiktokUser.TikTokProfile.Username + "@tiktok.com"
+		if err := s.db.CreateUser(ctx, user); err != nil {
+			return nil, fmt.Errorf("failed to create user: %w", err)
+		}
+	}
+
+	// Update last login
+	if err := s.db.UpdateLastLogin(ctx, user.ID); err != nil {
+		return nil, fmt.Errorf("failed to update last login: %w", err)
+	}
+
+	// Generate tokens
+	accessToken, err := s.jwtManager.GenerateAccessToken(user)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate access token: %w", err)
+	}
+
+	refreshToken, err := s.jwtManager.GenerateRefreshToken(user)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
+	}
+
+	return &types.AuthResponse{
+		User:         user,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresIn:    int64(s.config.JWT.AccessTokenTTL.Seconds()),
+	}, nil
+}
+
+// GetAppleAuthURL generates Apple Sign-In authorization URL
+func (s *Service) GetAppleAuthURL(state string) string {
+	return s.appleService.GetAuthURL(state)
+}
+
+// AuthenticateWithApple authenticates a user with Apple Sign-In
+func (s *Service) AuthenticateWithApple(ctx context.Context, code string) (*types.AuthResponse, error) {
+	// Authenticate with Apple
+	appleUser, err := s.appleService.AuthenticateWithApple(ctx, code)
+	if err != nil {
+		return nil, fmt.Errorf("failed to authenticate with Apple: %w", err)
+	}
+
+	// Check if user already exists by Apple ID
+	var existingUser *types.User
+	if appleUser.AppleID != "" {
+		// Try to find user by Apple ID first
+		// Note: This would require adding a method to find user by Apple ID
+		// For now, we'll create a new user or update existing one by email
+	}
+
+	// Check if user exists by email
+	existingUser, err = s.db.GetUserByEmail(ctx, appleUser.Email)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check existing user: %w", err)
+	}
+
+	var user *types.User
+	if existingUser != nil {
+		// User exists, update Apple information
+		existingUser.AppleID = appleUser.AppleID
+		existingUser.AppleProfile = appleUser.AppleProfile
+		existingUser.IsEmailVerified = appleUser.IsEmailVerified
+		existingUser.FirstName = appleUser.FirstName
+		existingUser.LastName = appleUser.LastName
+
+		if err := s.db.UpdateUser(ctx, existingUser); err != nil {
+			return nil, fmt.Errorf("failed to update user: %w", err)
+		}
+		user = existingUser
+	} else {
+		// Create new user
+		user = appleUser
 		if err := s.db.CreateUser(ctx, user); err != nil {
 			return nil, fmt.Errorf("failed to create user: %w", err)
 		}

@@ -162,3 +162,13 @@ func (a *Auth) GetTikTokAuthURL(state string) string {
 func (a *Auth) AuthenticateWithTikTok(ctx context.Context, code string) (*types.AuthResponse, error) {
 	return a.service.AuthenticateWithTikTok(ctx, code)
 }
+
+// GetAppleAuthURL generates Apple Sign-In authorization URL
+func (a *Auth) GetAppleAuthURL(state string) string {
+	return a.service.GetAppleAuthURL(state)
+}
+
+// AuthenticateWithApple authenticates a user with Apple Sign-In
+func (a *Auth) AuthenticateWithApple(ctx context.Context, code string) (*types.AuthResponse, error) {
+	return a.service.AuthenticateWithApple(ctx, code)
+}

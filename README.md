@@ -4,13 +4,14 @@ A comprehensive authentication library for Go applications with MongoDB and Post
 
 ## Features
 
-- **Flexible Authentication**: Email/password, Google OAuth, and TikTok OAuth authentication
+- **Flexible Authentication**: Email/password, Google OAuth, TikTok OAuth, and Apple Sign-In authentication
 - **Multiple Database Support**: MongoDB and PostgreSQL with automatic schema management
 - **User Registration & Login**: Secure user registration and authentication
 - **Email Verification**: Email verification with customizable templates
 - **Password Reset**: Secure password reset functionality
 - **Google OAuth**: Complete OAuth 2.0 integration with Google
 - **TikTok OAuth**: Complete OAuth 2.0 integration with TikTok
+- **Apple Sign-In**: Production-ready Apple Sign-In with JWT client authentication
 - **JWT Tokens**: Access and refresh token management
 - **Custom Fields**: Extensible user data with custom fields
 - **Configurable**: Highly configurable security settings and email templates
@@ -81,10 +82,19 @@ func main() {
             ClientSecret: "your-tiktok-client-secret",
             RedirectURL:  "http://localhost:8080/auth/tiktok/callback",
         },
+        Apple: config.AppleConfig{
+            Enabled:     true,
+            ClientID:    "com.yourcompany.yourapp", // Your Services ID
+            TeamID:      "ABC123DEF4",              // Your Apple Developer Team ID
+            KeyID:       "KEY123456",               // Your Private Key ID
+            PrivateKey:  "-----BEGIN PRIVATE KEY-----\n...", // Your actual private key
+            RedirectURL: "http://localhost:8080/auth/apple/callback",
+        },
         Security: config.SecurityConfig{
             RequirePassword:   true,  // Require password authentication
             RequireGoogleAuth: false, // Google OAuth is optional
             RequireTikTokAuth: false, // TikTok OAuth is optional
+            RequireAppleAuth:  false, // Apple Sign-In is optional
         },
     }
 
@@ -121,6 +131,10 @@ func main() {
     // TikTok OAuth authentication
     tiktokAuthURL := auth.GetTikTokAuthURL("state-string")
     log.Printf("TikTok OAuth URL: %s", tiktokAuthURL)
+
+    // Apple Sign-In authentication
+    appleAuthURL := auth.GetAppleAuthURL("state-string")
+    log.Printf("Apple Sign-In URL: %s", appleAuthURL)
 }
 ```
 

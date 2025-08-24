@@ -73,6 +73,12 @@ func createIndexes(ctx context.Context, collection *mongo.Collection) error {
 		Options: options.Index().SetUnique(true).SetSparse(true),
 	}
 
+	// Apple ID index (unique, sparse)
+	appleIDIndex := mongo.IndexModel{
+		Keys:    bson.D{{Key: "apple_id", Value: 1}},
+		Options: options.Index().SetUnique(true).SetSparse(true),
+	}
+
 	// Email verification token index
 	emailTokenIndex := mongo.IndexModel{
 		Keys:    bson.D{{Key: "email_verification.token", Value: 1}},
@@ -94,6 +100,7 @@ func createIndexes(ctx context.Context, collection *mongo.Collection) error {
 		emailIndex,
 		googleIDIndex,
 		tiktokIDIndex,
+		appleIDIndex,
 		emailTokenIndex,
 		passwordTokenIndex,
 		createdAtIndex,

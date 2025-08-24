@@ -20,6 +20,7 @@ type Config struct {
 	Security SecurityConfig `json:"security"`
 	Google   GoogleConfig   `json:"google"`
 	TikTok   TikTokConfig   `json:"tiktok"`
+	Apple    AppleConfig    `json:"apple"`
 }
 
 // DatabaseConfig represents database configuration
@@ -87,6 +88,16 @@ type TikTokConfig struct {
 	Enabled      bool   `json:"enabled" default:"false"`
 }
 
+// AppleConfig represents Apple Sign-In configuration
+type AppleConfig struct {
+	ClientID    string `json:"client_id"`    // Services ID (e.g., com.yourcompany.yourapp)
+	TeamID      string `json:"team_id"`      // Apple Developer Team ID
+	KeyID       string `json:"key_id"`       // Private Key ID
+	PrivateKey  string `json:"private_key"`  // Private Key content (PEM format)
+	RedirectURL string `json:"redirect_url"` // OAuth redirect URL
+	Enabled     bool   `json:"enabled" default:"false"`
+}
+
 // SecurityConfig represents security configuration
 type SecurityConfig struct {
 	PasswordMinLength        int           `json:"password_min_length" default:"8"`
@@ -99,6 +110,7 @@ type SecurityConfig struct {
 	RequirePassword          bool          `json:"require_password" default:"true"`
 	RequireGoogleAuth        bool          `json:"require_google_auth" default:"false"`
 	RequireTikTokAuth        bool          `json:"require_tiktok_auth" default:"false"`
+	RequireAppleAuth         bool          `json:"require_apple_auth" default:"false"`
 }
 
 // DefaultConfig returns a default configuration
@@ -128,11 +140,15 @@ func DefaultConfig() *Config {
 			RequirePassword:          true,
 			RequireGoogleAuth:        false,
 			RequireTikTokAuth:        false,
+			RequireAppleAuth:         false,
 		},
 		Google: GoogleConfig{
 			Enabled: false,
 		},
 		TikTok: TikTokConfig{
+			Enabled: false,
+		},
+		Apple: AppleConfig{
 			Enabled: false,
 		},
 	}

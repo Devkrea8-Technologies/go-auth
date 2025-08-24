@@ -35,6 +35,10 @@ type User struct {
 	TikTokID      string         `bson:"tiktok_id,omitempty" json:"tiktok_id,omitempty"`
 	TikTokProfile *TikTokProfile `bson:"tiktok_profile,omitempty" json:"tiktok_profile,omitempty"`
 
+	// Apple Sign-In support
+	AppleID      string        `bson:"apple_id,omitempty" json:"apple_id,omitempty"`
+	AppleProfile *AppleProfile `bson:"apple_profile,omitempty" json:"apple_profile,omitempty"`
+
 	// Custom fields support
 	CustomFields map[string]interface{} `bson:"custom_fields,omitempty" json:"custom_fields,omitempty"`
 }
@@ -166,6 +170,17 @@ type TikTokAuthResponse struct {
 	State   string `json:"state"`
 }
 
+// AppleAuthRequest represents Apple Sign-In authentication request
+type AppleAuthRequest struct {
+	Code string `json:"code" validate:"required"`
+}
+
+// AppleAuthResponse represents Apple Sign-In authentication response
+type AppleAuthResponse struct {
+	AuthURL string `json:"auth_url"`
+	State   string `json:"state"`
+}
+
 // AuthResponse represents authentication response
 type AuthResponse struct {
 	User         *User  `json:"user"`
@@ -201,6 +216,17 @@ type TikTokProfile struct {
 	IsPrivate      bool   `json:"is_private"`
 }
 
+// AppleProfile represents Apple Sign-In profile information
+type AppleProfile struct {
+	ID             string `json:"id"`
+	Email          string `json:"email"`
+	EmailVerified  string `json:"email_verified"`   // "true" or "false" as string
+	IsPrivateEmail string `json:"is_private_email"` // "true" or "false" as string
+	RealUserStatus int    `json:"real_user_status"` // 0: Unsupported, 1: Unknown, 2: LikelyReal
+	FirstName      string `json:"first_name,omitempty"`
+	LastName       string `json:"last_name,omitempty"`
+}
+
 // UserResponse represents user response (without sensitive data)
 type UserResponse struct {
 	ID              interface{} `json:"id"`
@@ -220,6 +246,10 @@ type UserResponse struct {
 	// TikTok OAuth support
 	TikTokID      string         `json:"tiktok_id,omitempty"`
 	TikTokProfile *TikTokProfile `json:"tiktok_profile,omitempty"`
+
+	// Apple Sign-In support
+	AppleID      string        `json:"apple_id,omitempty"`
+	AppleProfile *AppleProfile `json:"apple_profile,omitempty"`
 
 	// Custom fields support
 	CustomFields map[string]interface{} `json:"custom_fields,omitempty"`
