@@ -406,6 +406,8 @@ type SecurityConfig struct {
     RequireGoogleAuth     bool          `json:"require_google_auth" default:"false"`
     RequireTikTokAuth     bool          `json:"require_tiktok_auth" default:"false"`
     RequireAppleAuth      bool          `json:"require_apple_auth" default:"false"`
+    Enable2FA             bool          `json:"enable_2fa" default:"false"`
+    Require2FA            bool          `json:"require_2fa" default:"false"`
 }
 ```
 
@@ -431,6 +433,12 @@ type SecurityConfig struct {
 
 - **RequireEmailVerification**: Require email verification for login (default: true)
   - Example: `true`
+
+- **Enable2FA**: Enable Two-Factor Authentication functionality (default: false)
+  - Example: `true`
+
+- **Require2FA**: Require 2FA for all users (default: false)
+  - Example: `false`
 
 ### Example
 
@@ -486,6 +494,8 @@ cfg := &config.Config{
         MaxLoginAttempts:          5,
         LockoutDuration:           15 * time.Minute,
         RequireEmailVerification:  true,
+        Enable2FA:                 true,
+        Require2FA:                false,
     },
 }
 ```

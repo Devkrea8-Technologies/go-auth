@@ -571,6 +571,211 @@ func main() {
 }
 ```
 
+## Two-Factor Authentication (2FA) Integration
+
+### Basic 2FA Setup
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "time"
+    
+    "github.com/Devkrea8-Technologies/go-auth"
+    "github.com/Devkrea8-Technologies/go-auth/config"
+    "github.com/Devkrea8-Technologies/go-auth/types"
+)
+
+func main() {
+    // Create configuration with 2FA enabled
+    cfg := &config.Config{
+        Database: config.DatabaseConfig{
+            Type:       config.DatabaseTypeMongoDB,
+            URI:        "mongodb://localhost:27017",
+            Database:   "myapp",
+            Collection: "users",
+        },
+        JWT: config.JWTConfig{
+            SecretKey:       "your-secret-key-here",
+            AccessTokenTTL:  15 * time.Minute,
+            RefreshTokenTTL: 7 * 24 * time.Hour,
+            Issuer:          "MyApp",
+        },
+        Security: config.SecurityConfig{
+            Enable2FA:  true,  // Enable 2FA functionality
+            Require2FA: false, // Make 2FA optional
+        },
+    }
+
+    // Initialize auth service
+    auth, err := goauth.New(cfg)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer auth.Close(context.Background())
+
+    // Register a user first
+    user := &types.UserRegistration{
+        Email:     "user@example.com",
+        Password:  "securepassword123",
+        FirstName: "John",
+        LastName:  "Doe",
+    }
+
+    response, err := auth.Register(context.Background(), user, "https://example.com")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Setup 2FA
+    setupReq := &types.TwoFactorSetupRequest{
+        UserID: response.User.ID,
+    }
+
+    setupResponse, err := auth.Setup2FA(context.Background(), setupReq)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("2FA Setup successful!\n")
+    fmt.Printf("Secret: %s\n", setupResponse.Secret)
+    fmt.Printf("QR Code URL: %s\n", setupResponse.QRCodeURL)
+    fmt.Printf("Backup Codes: %v\n", setupResponse.BackupCodes)
+}
+```
+
+### 2FA Verification Flow
+
+```go
+func handle2FAVerification(auth *goauth.Auth, userID interface{}, code string) {
+    // Verify 2FA code
+    verifyReq := &types.TwoFactorVerifyRequest{
+        UserID: userID,
+        Code:   code, // TOTP code or backup code
+    }
+
+    isValid, err := auth.Verify2FA(context.Background(), verifyReq)
+    if err != nil {
+        log.Printf("2FA verification failed: %v", err)
+        return
+    }
+
+    if isValid {
+        fmt.Println("2FA code verified successfully!")
+        // Proceed with authentication
+    } else {
+        fmt.Println("Invalid 2FA code")
+    }
+}
+```
+
+### Enable 2FA
+
+```go
+func enable2FA(auth *goauth.Auth, userID interface{}, totpCode string) error {
+    // User scans QR code and enters the code from their authenticator app
+    enableReq := &types.TwoFactorVerifyRequest{
+        UserID: userID,
+        Code:   totpCode, // Code from authenticator app
+    }
+
+    err := auth.Enable2FA(context.Background(), enableReq)
+    if err != nil {
+        return fmt.Errorf("failed to enable 2FA: %w", err)
+    }
+
+    fmt.Println("2FA enabled successfully!")
+    return nil
+}
+```
+
+### Disable 2FA
+
+```go
+func disable2FA(auth *goauth.Auth, userID interface{}, code string) error {
+    // User must provide a valid 2FA code to disable
+    disableReq := &types.TwoFactorDisableRequest{
+        UserID: userID,
+        Code:   code, // TOTP code or backup code
+    }
+
+    err := auth.Disable2FA(context.Background(), disableReq)
+    if err != nil {
+        return fmt.Errorf("failed to disable 2FA: %w", err)
+    }
+
+    fmt.Println("2FA disabled successfully!")
+    return nil
+}
+```
+
+### Using Backup Codes
+
+```go
+func useBackupCode(auth *goauth.Auth, userID interface{}, backupCode string) {
+    // Use backup code for account recovery
+    backupReq := &types.TwoFactorVerifyRequest{
+        UserID: userID,
+        Code:   backupCode, // Backup code
+    }
+
+    isValid, err := auth.Verify2FA(context.Background(), backupReq)
+    if err != nil {
+        log.Printf("Backup code verification failed: %v", err)
+        return
+    }
+
+    if isValid {
+        fmt.Println("Backup code verified successfully!")
+        fmt.Println("Note: This backup code has been consumed and cannot be used again.")
+    } else {
+        fmt.Println("Invalid backup code")
+    }
+}
+```
+
+### Multi-Provider Authentication with 2FA
+
+```go
+func main() {
+    // Configuration allowing all authentication methods including 2FA
+    cfg := &config.Config{
+        // ... other config
+        Security: config.SecurityConfig{
+            RequirePassword:   true,  // Require password authentication
+            RequireGoogleAuth: false, // Google OAuth is optional
+            RequireTikTokAuth: false, // TikTok OAuth is optional
+            RequireAppleAuth:  false, // Apple Sign-In is optional
+            Enable2FA:         true,  // Enable 2FA functionality
+            Require2FA:        false, // 2FA is optional
+        },
+    }
+
+    auth, err := goauth.New(cfg)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Users can authenticate with any combination:
+    // - Email/password only
+    // - Google OAuth only
+    // - TikTok OAuth only
+    // - Apple Sign-In only
+    // - Any combination of the above
+    // - Plus optional 2FA for any authentication method
+
+    // The library automatically handles:
+    // - User account linking
+    // - Profile data merging
+    // - Authentication method preferences
+    // - Security validation
+    // - 2FA setup and verification
+}
+```
+
 These examples show the most common usage patterns. For more advanced scenarios, refer to the API documentation.
 
 ## TikTok OAuth Integration

@@ -40,8 +40,8 @@ type User struct {
 	AppleProfile *AppleProfile `bson:"apple_profile,omitempty" json:"apple_profile,omitempty"`
 
 	// 2FA support
-	TwoFactorEnabled   bool     `bson:"two_factor_enabled" json:"two_factor_enabled"`
-	TwoFactorSecret    string   `bson:"two_factor_secret,omitempty" json:"two_factor_secret,omitempty"`
+	TwoFactorEnabled     bool     `bson:"two_factor_enabled" json:"two_factor_enabled"`
+	TwoFactorSecret      string   `bson:"two_factor_secret,omitempty" json:"two_factor_secret,omitempty"`
 	TwoFactorBackupCodes []string `bson:"two_factor_backup_codes,omitempty" json:"two_factor_backup_codes,omitempty"`
 
 	// Custom fields support
@@ -257,7 +257,7 @@ type UserResponse struct {
 	AppleProfile *AppleProfile `json:"apple_profile,omitempty"`
 
 	// 2FA support
-	TwoFactorEnabled   bool     `json:"two_factor_enabled"`
+	TwoFactorEnabled     bool     `json:"two_factor_enabled"`
 	TwoFactorBackupCodes []string `json:"two_factor_backup_codes,omitempty"`
 
 	// Custom fields support
@@ -284,8 +284,8 @@ type TwoFactorSetupRequest struct {
 
 // TwoFactorSetupResponse represents 2FA setup response
 type TwoFactorSetupResponse struct {
-	Secret      string `json:"secret"`       // TOTP secret for QR code generation
-	QRCodeURL   string `json:"qr_code_url"`  // URL for QR code
+	Secret      string   `json:"secret"`       // TOTP secret for QR code generation
+	QRCodeURL   string   `json:"qr_code_url"`  // URL for QR code
 	BackupCodes []string `json:"backup_codes"` // Backup codes for account recovery
 }
 

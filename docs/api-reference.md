@@ -464,6 +464,133 @@ if err != nil {
 }
 ```
 
+## Two-Factor Authentication (2FA) Methods
+
+### Setup2FA
+
+Sets up 2FA for a user by generating a TOTP secret and backup codes.
+
+**Signature:**
+```go
+func (a *Auth) Setup2FA(ctx context.Context, req *types.TwoFactorSetupRequest) (*types.TwoFactorSetupResponse, error)
+```
+
+**Parameters:**
+- `ctx` (context.Context): Context for the operation
+- `req` (*types.TwoFactorSetupRequest): Setup request containing user ID
+
+**Returns:**
+- `*types.TwoFactorSetupResponse`: Setup response with secret, QR code URL, and backup codes
+- `error`: Error if setup fails
+
+**Example:**
+```go
+setupReq := &types.TwoFactorSetupRequest{
+    UserID: user.ID,
+}
+
+setupResponse, err := auth.Setup2FA(context.Background(), setupReq)
+if err != nil {
+    // Handle error
+}
+
+// Generate QR code for authenticator apps
+qrCodeURL := setupResponse.QRCodeURL
+// Store backup codes securely
+backupCodes := setupResponse.BackupCodes
+```
+
+### Enable2FA
+
+Enables 2FA for a user after they verify the setup code.
+
+**Signature:**
+```go
+func (a *Auth) Enable2FA(ctx context.Context, req *types.TwoFactorVerifyRequest) error
+```
+
+**Parameters:**
+- `ctx` (context.Context): Context for the operation
+- `req` (*types.TwoFactorVerifyRequest): Verification request with user ID and TOTP code
+
+**Returns:**
+- `error`: Error if enabling fails
+
+**Example:**
+```go
+enableReq := &types.TwoFactorVerifyRequest{
+    UserID: user.ID,
+    Code:   "123456", // Code from authenticator app
+}
+
+err := auth.Enable2FA(context.Background(), enableReq)
+if err != nil {
+    // Handle error
+}
+```
+
+### Verify2FA
+
+Verifies a 2FA code (TOTP or backup code).
+
+**Signature:**
+```go
+func (a *Auth) Verify2FA(ctx context.Context, req *types.TwoFactorVerifyRequest) (bool, error)
+```
+
+**Parameters:**
+- `ctx` (context.Context): Context for the operation
+- `req` (*types.TwoFactorVerifyRequest): Verification request with user ID and code
+
+**Returns:**
+- `bool`: True if code is valid, false otherwise
+- `error`: Error if verification fails
+
+**Example:**
+```go
+verifyReq := &types.TwoFactorVerifyRequest{
+    UserID: user.ID,
+    Code:   "123456", // TOTP code or backup code
+}
+
+isValid, err := auth.Verify2FA(context.Background(), verifyReq)
+if err != nil {
+    // Handle error
+}
+if isValid {
+    // Code is valid, proceed with authentication
+}
+```
+
+### Disable2FA
+
+Disables 2FA for a user after they provide a valid code.
+
+**Signature:**
+```go
+func (a *Auth) Disable2FA(ctx context.Context, req *types.TwoFactorDisableRequest) error
+```
+
+**Parameters:**
+- `ctx` (context.Context): Context for the operation
+- `req` (*types.TwoFactorDisableRequest): Disable request with user ID and verification code
+
+**Returns:**
+- `error`: Error if disabling fails
+
+**Example:**
+```go
+disableReq := &types.TwoFactorDisableRequest{
+    UserID: user.ID,
+    Code:   "123456", // TOTP code or backup code
+}
+
+err := auth.Disable2FA(context.Background(), disableReq)
+if err != nil {
+    // Handle error
+}
+```
+
 ## Utility Methods
 
 ### Close
@@ -704,6 +831,11 @@ type User struct {
     AppleID           string             `bson:"apple_id,omitempty" json:"apple_id,omitempty"`
     AppleProfile      *AppleProfile      `bson:"apple_profile,omitempty" json:"apple_profile,omitempty"`
 
+    // 2FA support
+    TwoFactorEnabled     bool     `bson:"two_factor_enabled" json:"two_factor_enabled"`
+    TwoFactorSecret      string   `bson:"two_factor_secret,omitempty" json:"two_factor_secret,omitempty"`
+    TwoFactorBackupCodes []string `bson:"two_factor_backup_codes,omitempty" json:"two_factor_backup_codes,omitempty"`
+
     // Custom fields support
     CustomFields      map[string]interface{} `bson:"custom_fields,omitempty" json:"custom_fields,omitempty"`
 }
@@ -804,6 +936,42 @@ type AppleAuthRequest struct {
 type AppleAuthResponse struct {
     AuthURL string `json:"auth_url"`
     State   string `json:"state"`
+}
+```
+
+### TwoFactorSetupRequest
+
+```go
+type TwoFactorSetupRequest struct {
+    UserID interface{} `json:"user_id" validate:"required"`
+}
+```
+
+### TwoFactorSetupResponse
+
+```go
+type TwoFactorSetupResponse struct {
+    Secret      string   `json:"secret"`       // TOTP secret for QR code generation
+    QRCodeURL   string   `json:"qr_code_url"`  // URL for QR code
+    BackupCodes []string `json:"backup_codes"` // Backup codes for account recovery
+}
+```
+
+### TwoFactorVerifyRequest
+
+```go
+type TwoFactorVerifyRequest struct {
+    UserID interface{} `json:"user_id" validate:"required"`
+    Code   string      `json:"code" validate:"required"` // TOTP code or backup code
+}
+```
+
+### TwoFactorDisableRequest
+
+```go
+type TwoFactorDisableRequest struct {
+    UserID interface{} `json:"user_id" validate:"required"`
+    Code   string      `json:"code" validate:"required"` // TOTP code or backup code
 }
 ```
 

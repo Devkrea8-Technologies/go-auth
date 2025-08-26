@@ -151,6 +151,11 @@ The library creates a `users` collection with the following document structure:
     "last_name": String               // optional
   },
   
+  // 2FA fields
+  "two_factor_enabled": Boolean,      // Whether 2FA is enabled for the user
+  "two_factor_secret": String,        // TOTP secret (encrypted/stored securely)
+  "two_factor_backup_codes": [String], // Array of backup codes for account recovery
+  
   // Email verification
   "email_verification": {             // Email verification data (optional)
     "token": String,
@@ -191,6 +196,9 @@ CREATE TABLE users (
     tiktok_profile JSONB,                     -- TikTok profile information
     apple_id VARCHAR(255) UNIQUE,             -- Apple Sign-In ID
     apple_profile JSONB,                      -- Apple profile information
+    two_factor_enabled BOOLEAN DEFAULT FALSE, -- Whether 2FA is enabled
+    two_factor_secret VARCHAR(255),           -- TOTP secret
+    two_factor_backup_codes TEXT[],           -- Array of backup codes
     custom_fields JSONB                       -- Flexible custom data
 );
 ```
@@ -258,6 +266,15 @@ The library automatically creates the following indexes for optimal performance:
 ```
 - **Purpose**: Ensures Apple ID uniqueness and fast Apple Sign-In lookups
 - **Options**: Unique constraint, sparse index (only for documents with apple_id)
+
+#### 2FA Enabled Index
+```javascript
+{
+    "two_factor_enabled": 1
+}
+```
+- **Purpose**: Fast lookups for users with 2FA enabled
+- **Options**: Regular index for filtering users by 2FA status
 
 ### Email Verification Token Index
 ```javascript
@@ -375,6 +392,12 @@ CREATE INDEX idx_users_tiktok_id ON users(tiktok_id);
 CREATE INDEX idx_users_apple_id ON users(apple_id);
 ```
 - **Purpose**: Ensures Apple ID uniqueness and fast Apple Sign-In lookups
+
+#### 2FA Enabled Index
+```sql
+CREATE INDEX idx_users_two_factor_enabled ON users(two_factor_enabled);
+```
+- **Purpose**: Fast lookups for users with 2FA enabled
 
 #### Email Verification Token Index
 ```sql
