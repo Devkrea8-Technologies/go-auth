@@ -6,22 +6,22 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
-	"github.com/Devkrea8-Technologies/go-auth/config"
-	"github.com/Devkrea8-Technologies/go-auth/database"
-	"github.com/Devkrea8-Technologies/go-auth/email"
-	"github.com/Devkrea8-Technologies/go-auth/types"
-	"github.com/Devkrea8-Technologies/go-auth/utils"
+	"github.com/Devkrea8-Technologies/go-auth/go-auth/config"
+	"github.com/Devkrea8-Technologies/go-auth/go-auth/database"
+	"github.com/Devkrea8-Technologies/go-auth/go-auth/email"
+	"github.com/Devkrea8-Technologies/go-auth/go-auth/types"
+	"github.com/Devkrea8-Technologies/go-auth/go-auth/utils"
 )
 
 // Service represents the main authentication service
 type Service struct {
-	config        *config.Config
-	db            database.Database
-	jwtManager    *JWTManager
-	emailService  *email.EmailService
-	googleService *GoogleService
-	tiktokService *TikTokService
-	appleService  *AppleService
+	config           *config.Config
+	db               database.Database
+	jwtManager       *JWTManager
+	emailService     *email.EmailService
+	googleService    *GoogleService
+	tiktokService    *TikTokService
+	appleService     *AppleService
 	twoFactorService *TwoFactorService
 }
 
@@ -63,13 +63,13 @@ func NewService(cfg *config.Config) (*Service, error) {
 	twoFactorService := NewTwoFactorService(cfg)
 
 	return &Service{
-		config:        cfg,
-		db:            db,
-		jwtManager:    jwtManager,
-		emailService:  emailService,
-		googleService: googleService,
-		tiktokService: tiktokService,
-		appleService:  appleService,
+		config:           cfg,
+		db:               db,
+		jwtManager:       jwtManager,
+		emailService:     emailService,
+		googleService:    googleService,
+		tiktokService:    tiktokService,
+		appleService:     appleService,
 		twoFactorService: twoFactorService,
 	}, nil
 }

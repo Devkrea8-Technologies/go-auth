@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Devkrea8-Technologies/go-auth/config"
-	"github.com/Devkrea8-Technologies/go-auth/types"
+	"github.com/Devkrea8-Technologies/go-auth/go-auth/config"
+	"github.com/Devkrea8-Technologies/go-auth/go-auth/types"
 )
 
 // TikTokService handles TikTok OAuth operations

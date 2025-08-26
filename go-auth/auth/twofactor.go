@@ -8,8 +8,8 @@ import (
 
 	"github.com/pquerna/otp/totp"
 
-	"github.com/Devkrea8-Technologies/go-auth/config"
-	"github.com/Devkrea8-Technologies/go-auth/types"
+	"github.com/Devkrea8-Technologies/go-auth/go-auth/config"
+	"github.com/Devkrea8-Technologies/go-auth/go-auth/types"
 )
 
 // TwoFactorService handles 2FA operations

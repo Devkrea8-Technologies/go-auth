@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 
-	"github.com/Devkrea8-Technologies/go-auth/types"
+	"github.com/Devkrea8-Technologies/go-auth/go-auth/types"
 )
 
 // Database interface that both MongoDB and PostgreSQL implement

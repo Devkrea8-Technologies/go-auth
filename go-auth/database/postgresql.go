@@ -8,8 +8,8 @@ import (
 
 	"github.com/lib/pq"
 
-	"github.com/Devkrea8-Technologies/go-auth/config"
-	"github.com/Devkrea8-Technologies/go-auth/types"
+	"github.com/Devkrea8-Technologies/go-auth/go-auth/config"
+	"github.com/Devkrea8-Technologies/go-auth/go-auth/types"
 
 	_ "github.com/lib/pq"
 )

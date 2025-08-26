@@ -6,9 +6,9 @@ import (
 	"log"
 	"time"
 
-	goauth "github.com/Devkrea8-Technologies/go-auth"
-	"github.com/Devkrea8-Technologies/go-auth/config"
-	"github.com/Devkrea8-Technologies/go-auth/types"
+	goauth "github.com/Devkrea8-Technologies/go-auth/go-auth"
+	"github.com/Devkrea8-Technologies/go-auth/go-auth/config"
+	"github.com/Devkrea8-Technologies/go-auth/go-auth/types"
 )
 
 func main() {

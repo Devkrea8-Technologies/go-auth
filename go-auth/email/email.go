@@ -3,12 +3,12 @@ package email
 import (
 	"bytes"
 	"fmt"
-	"strings"
 	"html/template"
+	"strings"
 
 	"gopkg.in/gomail.v2"
 
-	"github.com/Devkrea8-Technologies/go-auth/config"
+	"github.com/Devkrea8-Technologies/go-auth/go-auth/config"
 )
 
 // EmailService handles email operations

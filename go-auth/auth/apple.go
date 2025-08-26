@@ -16,8 +16,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	"github.com/Devkrea8-Technologies/go-auth/config"
-	"github.com/Devkrea8-Technologies/go-auth/types"
+	"github.com/Devkrea8-Technologies/go-auth/go-auth/config"
+	"github.com/Devkrea8-Technologies/go-auth/go-auth/types"
 )
 
 // AppleService handles Apple Sign-In operations

@@ -22,7 +22,7 @@ A comprehensive authentication library for Go applications with MongoDB and Post
 ### Installation
 
 ```bash
-go get github.com/Devkrea8-Technologies/go-auth
+go get github.com/Devkrea8-Technologies/go-auth/go-auth
 ```
 
 ### Basic Usage
@@ -35,9 +35,9 @@ import (
     "log"
     "time"
     
-    "github.com/Devkrea8-Technologies/go-auth"
-    "github.com/Devkrea8-Technologies/go-auth/config"
-    "github.com/Devkrea8-Technologies/go-auth/types"
+    "github.com/Devkrea8-Technologies/go-auth/go-auth"
+    "github.com/Devkrea8-Technologies/go-auth/go-auth/config"
+    "github.com/Devkrea8-Technologies/go-auth/go-auth/types"
 )
 
 func main() {
