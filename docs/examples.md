@@ -15,9 +15,9 @@ import (
     "log"
     "time"
     
-    "github.com/go-auth"
-    "github.com/go-auth/config"
-    "github.com/go-auth/types"
+    "github.com/Devkrea8-Technologies/go-auth"
+    "github.com/Devkrea8-Technologies/go-auth/config"
+    "github.com/Devkrea8-Technologies/go-auth/types"
 )
 
 func main() {
@@ -86,9 +86,9 @@ import (
     "log"
     "time"
     
-    "github.com/go-auth"
-    "github.com/go-auth/config"
-    "github.com/go-auth/types"
+    "github.com/Devkrea8-Technologies/go-auth"
+    "github.com/Devkrea8-Technologies/go-auth/config"
+    "github.com/Devkrea8-Technologies/go-auth/types"
 )
 
 func main() {
@@ -208,9 +208,9 @@ import (
     "time"
     
     "github.com/gin-gonic/gin"
-    "github.com/go-auth"
-    "github.com/go-auth/config"
-    "github.com/go-auth/types"
+    "github.com/Devkrea8-Technologies/go-auth"
+    "github.com/Devkrea8-Technologies/go-auth/config"
+    "github.com/Devkrea8-Technologies/go-auth/types"
 )
 
 type AuthHandler struct {
@@ -461,9 +461,9 @@ import (
     "log"
     "time"
     
-    "github.com/go-auth"
-    "github.com/go-auth/config"
-    "github.com/go-auth/types"
+    "github.com/Devkrea8-Technologies/go-auth"
+    "github.com/Devkrea8-Technologies/go-auth/config"
+    "github.com/Devkrea8-Technologies/go-auth/types"
 )
 
 func main() {
@@ -791,9 +791,9 @@ import (
     "log"
     "time"
     
-    "github.com/go-auth"
-    "github.com/go-auth/config"
-    "github.com/go-auth/types"
+    "github.com/Devkrea8-Technologies/go-auth"
+    "github.com/Devkrea8-Technologies/go-auth/config"
+    "github.com/Devkrea8-Technologies/go-auth/types"
 )
 
 func main() {
